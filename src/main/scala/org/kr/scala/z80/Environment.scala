@@ -1,6 +1,22 @@
 package org.kr.scala.z80
 
-class Environment(private val variables:Map[String,Double],private val forStack:ForStack,private val lineStack:LineStack)
+class Environment(private val variables:Map[String,Double],private val forStack:ForStack,private val lineStack:LineStack) {
+  def setVariable(name:String,value:Double):Environment=
+    new Environment(variables ++ Map(name->value),forStack,lineStack)
+  def getValue(name:String):Option[Double]=variables.get(name)
+  def setLine(num:Int):Environment={
+    val newLineStack=lineStack.changeTopTo(num)
+    new Environment(variables,forStack,newLineStack)
+  }
+  def setForStack(name:String,line:Int):Environment={
+    val newForStack=forStack.push(name,line)
+    new Environment(variables,newForStack,lineStack)
+  }
+}
+
+object Environment {
+  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty)
+}
 
 class ForStack(private val map:Map[String,Int]) {
   def isEmpty:Boolean=map.isEmpty

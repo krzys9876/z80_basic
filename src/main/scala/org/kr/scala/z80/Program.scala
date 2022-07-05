@@ -1,28 +1,28 @@
 package org.kr.scala.z80
 
 class Program(lines:Vector[Line]) {
-  def show():Unit=lines.foreach(line=>println(line.print))
+  def show():Unit=lines.foreach(line=>println(line.list))
 }
 
-trait Printable {
-  def print:String
-  def printName:String=this.getClass.getSimpleName
+trait Listable {
+  def list:String
+  def listName:String=this.getClass.getSimpleName
 }
 
-class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extends Printable {
-  override def print:String={
+class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extends Listable {
+  override def list:String={
     val txtLineNum=f"$number "
-    val txtStatement=f"${statement.print} "
-    val txtTokens=tokens.foldLeft("")((text,token)=>text+token.print+" ")
+    val txtStatement=f"${statement.list} "
+    val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
     txtLineNum+txtStatement+txtTokens
   }
 }
 
-trait Statement extends Printable {
-  override def print:String=printName
+trait Statement extends Listable {
+  override def list:String=listName
 }
 
-trait Token extends Printable
+trait Token extends Listable
 
 class FOR extends Statement
 
@@ -43,7 +43,7 @@ object NEXT {
 }
 
 trait Keyword extends Token {
-  override def print:String=printName
+  override def list:String=listName
 }
 
 class TO extends Keyword
@@ -59,7 +59,7 @@ object STEP {
 }
 
 class Expression(source:String) extends Token {
-  override def print:String=source
+  override def list:String=source
 }
 
 object Expression {
@@ -67,7 +67,7 @@ object Expression {
 }
 
 class Assignment extends Token {
-  override def print:String="="
+  override def list:String="="
 }
 
 object Assignment {
@@ -75,7 +75,7 @@ object Assignment {
 }
 
 class Variable(name:String) extends Token {
-  override def print:String=name
+  override def list:String=name
 }
 
 object Variable {
