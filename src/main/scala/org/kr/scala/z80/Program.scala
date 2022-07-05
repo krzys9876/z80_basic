@@ -1,6 +1,6 @@
 package org.kr.scala.z80
 
-class Program(lines:Vector[Line]) {
+class Program(val lines:Vector[Line]) {
   def show():Unit=lines.foreach(line=>println(line.list))
 }
 
@@ -16,6 +16,7 @@ class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extend
     val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
     txtLineNum+txtStatement+txtTokens
   }
+  def execute(env:Environment):Environment=env
 }
 
 trait Statement extends Listable {

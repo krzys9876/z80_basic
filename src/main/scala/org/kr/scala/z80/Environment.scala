@@ -1,21 +1,32 @@
 package org.kr.scala.z80
 
-class Environment(private val variables:Map[String,Double],private val forStack:ForStack,private val lineStack:LineStack) {
+class Environment(
+                   private val variables:Map[String,Double],
+                   private val forStack:ForStack,
+                   private val lineStack:LineStack,
+                   val console:String) {
   def setVariable(name:String,value:Double):Environment=
-    new Environment(variables ++ Map(name->value),forStack,lineStack)
+    new Environment(variables ++ Map(name->value),forStack,lineStack,console)
   def getValue(name:String):Option[Double]=variables.get(name)
   def setLine(num:Int):Environment={
     val newLineStack=lineStack.changeTopTo(num)
-    new Environment(variables,forStack,newLineStack)
+    new Environment(variables,forStack,newLineStack,console)
   }
   def setForStack(name:String,line:Int):Environment={
     val newForStack=forStack.push(name,line)
-    new Environment(variables,newForStack,lineStack)
+    new Environment(variables,newForStack,lineStack,console)
   }
+  def getCurrentLine:Option[Int]=lineStack.top
+
+  def run(program:Program):Environment=
+    program.lines.foldLeft(this)((env,line)=>line.execute(env))
+
+  def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console+text)
+  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console+text+"\n")
 }
 
 object Environment {
-  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty)
+  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,"")
 }
 
 class ForStack(private val map:Map[String,Int]) {
