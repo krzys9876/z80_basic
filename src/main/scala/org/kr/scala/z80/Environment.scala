@@ -4,7 +4,7 @@ class Environment(
                    private val variables:Map[String,Double],
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
-                   val console:String) {
+                   val console:List[String]) {
   def setVariable(name:String,value:Double):Environment=
     new Environment(variables ++ Map(name->value),forStack,lineStack,console)
   def getValue(name:String):Option[Double]=variables.get(name)
@@ -27,12 +27,12 @@ class Environment(
     program.lines.foldLeft(intialEnv)((env, line) => line.execute(env))
   }
 
-  def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console+text)
-  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console+text+"\n")
+  //def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
+  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
 }
 
 object Environment {
-  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,"")
+  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,List())
 }
 
 class ForStack(private val map:Map[String,Int]) {

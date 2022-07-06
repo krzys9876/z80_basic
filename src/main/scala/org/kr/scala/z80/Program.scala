@@ -19,28 +19,52 @@ class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extend
     val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
     txtLineNum+txtStatement+txtTokens
   }
-  def execute(env:Environment):Environment=env.setLine(number)
+  def execute(env:Environment):Environment={
+    val newEnv=env.setLine(number)
+    statement.execute(tokens,newEnv)
+  }
 }
 
 trait Statement extends Listable {
   override def list:String=listName
+  def execute(args:List[Token],environment: Environment):Environment
 }
 
 trait Token extends Listable
 
-class FOR extends Statement
+class FOR extends Statement {
+  override def execute(args:List[Token],environment: Environment):Environment=environment
+}
 
 object FOR {
   def apply():FOR=new FOR
 }
 
-class PRINT extends Statement
+class PRINT extends Statement {
+  override def execute(args:List[Token],environment: Environment):Environment= {
+    val output=expression(args).map(_.result.toString).getOrElse("")
+    environment.consolePrintln(output)
+  }
+
+  private def expression(args:List[Token]):Option[Expression]={
+    args match {
+      case head::_ =>
+        head match {
+          case expr:Expression=>Some(expr)
+          case _=> None
+        }
+      case Nil =>None
+    }
+  }
+}
 
 object PRINT {
   def apply():PRINT=new PRINT
 }
 
-class NEXT extends Statement
+class NEXT extends Statement {
+  override def execute(args:List[Token],environment: Environment):Environment=environment
+}
 
 object NEXT {
   def apply():NEXT=new NEXT
@@ -64,6 +88,7 @@ object STEP {
 
 class Expression(source:String) extends Token {
   override def list:String=source
+  def result:Any=source
 }
 
 object Expression {

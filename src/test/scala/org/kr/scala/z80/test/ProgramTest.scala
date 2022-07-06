@@ -17,7 +17,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment=initialEnvironment.run(program)
       Then("environment reflects the program")
       assert(environment.getCurrentLine.contains(20))
-      //assert(environment.console=="aaaa\nbbbb")
+      println(environment.console)
+      assert(environment.console==List("aaaa","bbbb"))
     }
   }
 }
