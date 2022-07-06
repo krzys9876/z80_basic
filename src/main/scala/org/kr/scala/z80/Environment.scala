@@ -16,6 +16,7 @@ class Environment(
     val newForStack=forStack.push(name,line)
     new Environment(variables,newForStack,lineStack,console)
   }
+  def getFor(name:String):Option[Int]=forStack.lineFor(name)
   def getCurrentLine:Option[Int]=lineStack.top
 
   def run(program:Program):Environment= {
@@ -23,8 +24,8 @@ class Environment(
   }
 
   private def doRun(startLineNum:Int,program: Program):Environment= {
-    val intialEnv = new Environment(variables, forStack, lineStack.push(startLineNum), console)
-    program.lines.foldLeft(intialEnv)((env, line) => line.execute(env))
+    val initialEnv = new Environment(variables, forStack, lineStack.push(startLineNum), console)
+    program.lines.foldLeft(initialEnv)((env, line) => line.execute(env))
   }
 
   def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))

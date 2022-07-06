@@ -33,7 +33,56 @@ trait Statement extends Listable {
 trait Token extends Listable
 
 class FOR extends Statement {
-  override def execute(args:List[Token],environment: Environment):Environment=environment
+  override def execute(args:List[Token],environment: Environment):Environment= {
+    val (argAssign,argsAfterAssignment)=assignment(args)
+    val (argTo,argsAfterTo)=to(argsAfterAssignment)
+    val (argEndVal,argsAfterEndVal)=endValue(argsAfterTo)
+
+
+    if(argAssign.isEmpty || argTo.isEmpty || argEndVal.isEmpty) environment // TODO: Throw error???
+    else {
+      val lineFor = environment.getFor(argAssign.get.variable.name)
+      if (lineFor.isEmpty) {
+        environment
+          .setVariable(argAssign.get.variable, argAssign.get.expression)
+          .setForStack(argAssign.get.variable.name,10) // TODO: hardcode
+      } else {
+        environment
+        //  .setVariable(argAssign.get.variable, Result(argAssign.get.))
+      }
+    }
+}
+
+
+  private def assignment(args:List[Token]):(Option[Assignment],List[Token])=
+    args match {
+      case head::_ =>
+        head match {
+          case assign:Assignment=>(Some(assign),args.tail)
+          case _=> (None,args.tail)
+        }
+      case Nil =>(None,args) // TODO: throw error???
+    }
+
+  private def to(args:List[Token]):(Option[TO],List[Token])=
+    args match {
+      case head::_ =>
+        head match {
+          case to:TO=>(Some(to),args.tail)
+          case _=> (None,args.tail)
+        }
+      case Nil =>(None,args) // TODO: throw error???
+    }
+
+  private def endValue(args:List[Token]):(Option[Expression],List[Token])=
+    args match {
+      case head::_ =>
+        head match {
+          case endV:Expression=>(Some(endV),args.tail)
+          case _=> (None,args.tail)
+        }
+      case Nil =>(None,args) // TODO: throw error???
+    }
 }
 
 object FOR {
@@ -87,22 +136,27 @@ object STEP {
   def apply():STEP=new STEP
 }
 
-case class Expression(source:Any) extends Token {
+abstract class Expression extends Token {
   override def list:String=
-    source match {
+    result match {
       case s: String=>s
       case n:BigDecimal=>n.toString()
       case n:Int=>n.toString
       case n:Long=>n.toString
       case n:Double=>n.toString
       case b:Boolean=>b.toString
+      case _=>"TYPE NOT SUPPORTED"
     }
 
-  def result:Any=source
+  def result:Any
 }
 
-object Expression {
-  def apply(source:String):Expression=new Expression(source)
+case class Result(value:Any) extends Expression {
+  def result:Any=value
+}
+
+object Result {
+  def apply(value:Any):Result=new Result(value)
 }
 
 class Assignment(val variable:Variable,val expression:Expression) extends Token {
@@ -148,7 +202,6 @@ class LET extends Statement {
       case Nil =>None
     }
   }
-
 }
 
 object LET {
