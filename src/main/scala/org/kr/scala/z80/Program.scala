@@ -41,6 +41,7 @@ object FOR {
 }
 
 class PRINT extends Statement {
+  // print text to console
   override def execute(args:List[Token],environment: Environment):Environment= {
     val output=expression(args).map(_.result.toString).getOrElse("")
     environment.consolePrintln(output)
@@ -109,4 +110,13 @@ class Variable(name:String) extends Token {
 
 object Variable {
   def apply(name:String):Variable=new Variable(name)
+}
+
+class REM extends Statement {
+  // ignore the line
+  override def execute(args:List[Token],environment: Environment):Environment=environment
+}
+
+object REM {
+  def apply():REM=new REM
 }

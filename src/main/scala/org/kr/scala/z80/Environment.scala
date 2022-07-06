@@ -27,8 +27,10 @@ class Environment(
     program.lines.foldLeft(intialEnv)((env, line) => line.execute(env))
   }
 
-  //def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
-  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
+  def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
+  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text+"\n"))
+
+  def showConsole():Unit = println(console.mkString(""))
 }
 
 object Environment {
