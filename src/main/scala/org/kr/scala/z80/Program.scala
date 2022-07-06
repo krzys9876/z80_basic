@@ -2,6 +2,9 @@ package org.kr.scala.z80
 
 class Program(val lines:Vector[Line]) {
   def show():Unit=lines.foreach(line=>println(line.list))
+  def firstLineNumber:Option[Int]=
+    if(lines.isEmpty) None
+    else Some(lines(0).number)
 }
 
 trait Listable {
@@ -16,7 +19,7 @@ class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extend
     val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
     txtLineNum+txtStatement+txtTokens
   }
-  def execute(env:Environment):Environment=env
+  def execute(env:Environment):Environment=env.setLine(number)
 }
 
 trait Statement extends Listable {

@@ -18,8 +18,14 @@ class Environment(
   }
   def getCurrentLine:Option[Int]=lineStack.top
 
-  def run(program:Program):Environment=
-    program.lines.foldLeft(this)((env,line)=>line.execute(env))
+  def run(program:Program):Environment= {
+    program.firstLineNumber.map(doRun(_,program)).getOrElse(this)
+  }
+
+  private def doRun(startLineNum:Int,program: Program):Environment= {
+    val intialEnv = new Environment(variables, forStack, lineStack.push(startLineNum), console)
+    program.lines.foldLeft(intialEnv)((env, line) => line.execute(env))
+  }
 
   def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console+text)
   def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console+text+"\n")
