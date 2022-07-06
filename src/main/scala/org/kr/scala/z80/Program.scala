@@ -87,8 +87,17 @@ object STEP {
   def apply():STEP=new STEP
 }
 
-class Expression(source:String) extends Token {
-  override def list:String=source
+case class Expression(source:Any) extends Token {
+  override def list:String=
+    source match {
+      case s: String=>s
+      case n:BigDecimal=>n.toString()
+      case n:Int=>n.toString
+      case n:Long=>n.toString
+      case n:Double=>n.toString
+      case b:Boolean=>b.toString
+    }
+
   def result:Any=source
 }
 
@@ -96,15 +105,15 @@ object Expression {
   def apply(source:String):Expression=new Expression(source)
 }
 
-class Assignment extends Token {
-  override def list:String="="
+class Assignment(val variable:Variable,val expression:Expression) extends Token {
+  override def list:String=f"${variable.list}=${expression.list}"
 }
 
 object Assignment {
-  def apply():Assignment=new Assignment
+  def apply(variable:Variable,expression: Expression):Assignment=new Assignment(variable,expression)
 }
 
-class Variable(name:String) extends Token {
+case class Variable(name:String) extends Token {
   override def list:String=name
 }
 
@@ -119,4 +128,29 @@ class REM extends Statement {
 
 object REM {
   def apply():REM=new REM
+}
+
+class LET extends Statement {
+  // print text to console
+  override def execute(args:List[Token],environment: Environment):Environment= {
+    val assign=assignment(args)
+    if(assign.isEmpty) environment // TODO: Throw error???
+    else environment.setVariable(assign.get.variable,assign.get.expression)
+  }
+
+  private def assignment(args:List[Token]):Option[Assignment]={
+    args match {
+      case head::_ =>
+        head match {
+          case assign:Assignment=>Some(assign)
+          case _=> None
+        }
+      case Nil =>None
+    }
+  }
+
+}
+
+object LET {
+  def apply():LET=new LET
 }

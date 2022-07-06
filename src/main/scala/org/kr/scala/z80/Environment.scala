@@ -1,13 +1,13 @@
 package org.kr.scala.z80
 
 class Environment(
-                   private val variables:Map[String,Double],
+                   private val variables:Map[Variable,Any],
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
                    val console:List[String]) {
-  def setVariable(name:String,value:Double):Environment=
-    new Environment(variables ++ Map(name->value),forStack,lineStack,console)
-  def getValue(name:String):Option[Double]=variables.get(name)
+  def setVariable(variable: Variable,value:Any):Environment=
+    new Environment(variables ++ Map(variable->value),forStack,lineStack,console)
+  def getValue(variable: Variable):Option[Any]=variables.get(variable)
   def setLine(num:Int):Environment={
     val newLineStack=lineStack.changeTopTo(num)
     new Environment(variables,forStack,newLineStack,console)
