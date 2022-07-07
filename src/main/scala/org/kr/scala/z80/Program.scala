@@ -117,6 +117,8 @@ class NEXT(val variable: Variable) extends Statement {
       .map(environment.setNextLine)
       .getOrElse(environment)
   }
+
+  override def list: String = f"NEXT ${variable.name}"
 }
 
 object NEXT {
@@ -129,6 +131,8 @@ class PRINT(val expression: Expression) extends Statement {
     val output=expression.result.toString
     environment.consolePrintln(output)
   }
+
+  override def list: String = f"PRINT \"${expression.toString}\""
 }
 
 object PRINT {
@@ -212,36 +216,27 @@ object Variable {
   def apply(name:String):Variable=new Variable(name)
 }
 
-class REM extends Statement {
+class REM(val comment:String) extends Statement {
   // ignore the line
   override def execute(args:List[Token],program:Program,environment: Environment):Environment=environment
+
+  override def list: String = f"REM $comment"
 }
 
 object REM {
-  def apply():REM=new REM
+  def apply(comment:String):REM=new REM(comment)
 }
 
-class LET extends Statement {
+class LET(val assignment: Assignment) extends Statement {
   // print text to console
   override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    val assign=assignment(args)
-    if(assign.isEmpty) environment // TODO: Throw error???
-    else environment.setVariable(assign.get.variable,assign.get.expression)
+    environment.setVariable(assignment.variable,assignment.expression)
   }
 
-  private def assignment(args:List[Token]):Option[Assignment]={
-    args match {
-      case head::_ =>
-        head match {
-          case assign:Assignment=>Some(assign)
-          case _=> None
-        }
-      case Nil =>None
-    }
-  }
+  override def list: String = f"LIST ${assignment.variable.name} = ${assignment.expression.toString}"
 }
 
 object LET {
-  def apply():LET=new LET
+  def apply(assignment: Assignment):LET=new LET(assignment)
 }
 

@@ -9,9 +9,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run only REM lines") {
       Given("a program consisting of REM lines")
       val program=new Program(Vector(
-        new Line(LineNumber(5),REM(),List()),
-        new Line(LineNumber(15),REM(),List()),
-        new Line(LineNumber(25),REM(),List()),
+        new Line(LineNumber(5),REM("comment1"),List()),
+        new Line(LineNumber(15),REM("comment2"),List()),
+        new Line(LineNumber(25),REM("comment3"),List()),
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -35,10 +35,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run assignment to a variable") {
       Given("a program consisting of assignment lines")
       val program=new Program(Vector(
-        new Line(LineNumber(30),LET(),List(Assignment(Variable("A"),Result(123L)))),
-        new Line(LineNumber(35),LET(),List(Assignment(Variable("B"),Result(234.123)))),
-        new Line(LineNumber(40),LET(),List(Assignment(Variable("C"),Result("qwerty")))),
-        new Line(LineNumber(45),LET(),List(Assignment(Variable("D"),Result(false))))
+        new Line(LineNumber(30),LET(Assignment(Variable("A"),Result(123L))),List()),
+        new Line(LineNumber(35),LET(Assignment(Variable("B"),Result(234.123))),List()),
+        new Line(LineNumber(40),LET(Assignment(Variable("C"),Result("qwerty"))),List()),
+        new Line(LineNumber(45),LET(Assignment(Variable("D"),Result(false))),List())
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
