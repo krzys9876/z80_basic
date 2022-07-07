@@ -54,9 +54,7 @@ class Line(val number:LineNumber,val statement:Statement,val tokens:List[Token])
 
   def isNextFor(variable: Variable):Boolean={
     statement.isInstanceOf[NEXT] &&
-      tokens.length==1 &&
-      tokens.head.isInstanceOf[Variable] &&
-      tokens.head.asInstanceOf[Variable]==variable
+      statement.asInstanceOf[NEXT].variable==variable
   }
 }
 
@@ -112,51 +110,29 @@ object FOR {
   def apply():FOR=new FOR
 }
 
-class NEXT extends Statement {
+class NEXT(val variable: Variable) extends Statement {
   override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    val(argVariable,argsAfterVariable)=decodeArgs(args)
-    if(argVariable.isEmpty) environment // TODO: Throw error???
-    else
-      environment
-        .getFor(argVariable.get.name)
-        .map(environment.setNextLine)
-        .getOrElse(environment)
-  }
-
-  private def decodeArgs(args:List[Token]):(Option[Variable],List[Token])={
-    args.take(1) match {
-      case variable :: Nil if variable.isInstanceOf[Variable] =>
-        (Some(variable.asInstanceOf[Variable]),args.slice(1,args.length))
-      case _ => (None,args)
-    }
+    environment
+      .getFor(variable.name)
+      .map(environment.setNextLine)
+      .getOrElse(environment)
   }
 }
 
 object NEXT {
-  def apply():NEXT=new NEXT
+  def apply(variable: Variable):NEXT=new NEXT(variable)
 }
 
-class PRINT extends Statement {
+class PRINT(val expression: Expression) extends Statement {
   // print text to console
   override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    val output=expression(args).map(_.result.toString).getOrElse("")
+    val output=expression.result.toString
     environment.consolePrintln(output)
-  }
-
-  private def expression(args:List[Token]):Option[Expression]={
-    args match {
-      case head::_ =>
-        head match {
-          case expr:Expression=>Some(expr)
-          case _=> None
-        }
-      case Nil =>None
-    }
   }
 }
 
 object PRINT {
-  def apply():PRINT=new PRINT
+  def apply(expression: Expression):PRINT=new PRINT(expression)
 }
 
 trait Keyword extends Token {

@@ -22,8 +22,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run only print lines") {
       Given("a program consisting only print lines")
       val program=new Program(Vector(
-        new Line(LineNumber(10),PRINT(),List(Result("aaaa"))),
-        new Line(LineNumber(20),PRINT(),List(Result("bbbb")))
+        new Line(LineNumber(10),PRINT(Result("aaaa")),List()),
+        new Line(LineNumber(20),PRINT(Result("bbbb")),List())
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -67,7 +67,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of empty for loop without step")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(4))),
-        new Line(LineNumber(20),NEXT(),List(Variable("I")))
+        new Line(LineNumber(20),NEXT(Variable("I")),List())
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -80,9 +80,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop without step")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(3))),
-        new Line(LineNumber(20),PRINT(),List(Result("A"))),
-        new Line(LineNumber(30),NEXT(),List(Variable("I"))),
-        new Line(LineNumber(40),PRINT(),List(Result("B")))
+        new Line(LineNumber(20),PRINT(Result("A")),List()),
+        new Line(LineNumber(30),NEXT(Variable("I")),List()),
+        new Line(LineNumber(40),PRINT(Result("B")),List())
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
