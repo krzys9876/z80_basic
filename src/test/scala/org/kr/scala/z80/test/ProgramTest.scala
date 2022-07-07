@@ -16,7 +16,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
-      Then("environment reflects the program")
+      Then("environment state is unchanged except for last line number")
       assert(environment.getCurrentLine.contains(25))
     }
     Scenario("Run only print lines") {
@@ -28,10 +28,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
-      Then("environment reflects the program")
+      Then("console contains printed output")
       assert(environment.getCurrentLine.contains(20))
       assert(environment.console==List("aaaa\n","bbbb\n"))
-      environment.showConsole()
     }
     Scenario("Run assignment to a variable") {
       Given("a program consisting of assignment lines")
@@ -44,14 +43,14 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
-      Then("environment reflects the program")
+      Then("environment contains variables with expected values")
       assert(environment.getCurrentLine.contains(45))
       assert(environment.getValue(Variable("A")).contains(Result(123L)))
       assert(environment.getValue(Variable("B")).contains(Result(234.123)))
       assert(environment.getValue(Variable("C")).contains(Result("qwerty")))
       assert(environment.getValue(Variable("D")).contains(Result(0)))
     }
-    Scenario("Run for loop") {
+    Scenario("Initialize for loop") {
       Given("a program consisting of only for statement")
       val program=new Program(Vector(
         new Line(10,FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(3)))
@@ -59,12 +58,12 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
-      Then("environment contains looping variable")
+      Then("environment contains looping variable with initial value")
       assert(environment.getCurrentLine.contains(10))
       assert(environment.getValue(Variable("I")).contains(Result(1)))
       assert(environment.getFor("I").contains(10))
     }
-/*    Scenario("Run for loop") {
+    Scenario("Run for loop") {
       Given("a program consisting of for loop without step")
       val program=new Program(Vector(
         new Line(10,FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(3))),
@@ -75,10 +74,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
-      Then("environment reflects the program")
+      Then("loops is executed properly and looping variable is set to end value")
       assert(environment.getCurrentLine.contains(40))
       assert(environment.getValue(Variable("I")).contains(Result(3)))
       assert(environment.console==List("A\n","A\n","A\n","B\n"))
-    }*/
+    }
   }
 }

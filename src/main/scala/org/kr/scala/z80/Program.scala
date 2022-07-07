@@ -5,15 +5,28 @@ class Program(val lines:Vector[Line]) {
   def firstLineNumber:Option[Int]=
     if(lines.isEmpty) None
     else Some(lines(0).number)
-  def lineAfter(line:Line):Option[Int]={
+  def lineAfter(line:Line):Option[Line]={
     val index=lines.indexOf(line)
     index match {
       case i if i<0=> None // TODO: Throw exception???
       case i if i==lines.length-1 => None // end of program
-      case i=>Some(lines(i+1).number)
+      case i=>Some(lines(i+1))
     }
   }
+  def lineNumAfter(line:Line):Option[Int]= lineAfter(line).map(_.number)
   def line(lineNum:Int):Option[Line]=lines.find(_.number==lineNum)
+
+  def getNextFor(variable: Variable,from:Int):Option[Line]={
+    val forLine=lines.find(_.number==from)
+    val forLineIndex=forLine.map(lines.indexOf).getOrElse(-1)
+    if(forLineIndex>=0) {
+      lines
+        .slice(forLineIndex,lines.length)
+        .find(_.isNextFor(variable))
+        .flatMap(lineAfter)
+    }
+    else None
+  }
 }
 
 trait Listable {
@@ -28,79 +41,100 @@ class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extend
     val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
     txtLineNum+txtStatement+txtTokens
   }
-  def execute(env:Environment):Environment={
+  def execute(program:Program,env:Environment):Environment={
     val newEnv=env.setLine(number)
-    statement.execute(tokens,newEnv)
+    statement.execute(tokens,program,newEnv)
+  }
+
+  def isNextFor(variable: Variable):Boolean={
+    statement.isInstanceOf[NEXT] &&
+      tokens.length==1 &&
+      tokens.head.isInstanceOf[Variable] &&
+      tokens.head.asInstanceOf[Variable]==variable
   }
 }
 
 trait Statement extends Listable {
   override def list:String=listName
-  def execute(args:List[Token],environment: Environment):Environment
+  def execute(args:List[Token],program:Program,environment:Environment):Environment
 }
 
 trait Token extends Listable
 
 class FOR extends Statement {
-  override def execute(args:List[Token],environment: Environment):Environment= {
-    val (argAssign,argsAfterAssignment)=assignment(args)
-    val (argTo,argsAfterTo)=to(argsAfterAssignment)
-    val (argEndVal,argsAfterEndVal)=endValue(argsAfterTo)
-
+  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
+    val(argAssign,argTo,argEndVal,argsAfterEndVal)=decodeArgs(args)
+    val argNextStmt= program
+      .getNextFor(argAssign.get.variable,environment.getCurrentLine.get)
+      .map(_.number)
 
     if(argAssign.isEmpty || argTo.isEmpty || argEndVal.isEmpty) environment // TODO: Throw error???
     else {
       val lineFor = environment.getFor(argAssign.get.variable.name)
-      if (lineFor.isEmpty) {
+      if (lineFor.isEmpty) { // start of loop
         environment
           .setVariable(argAssign.get.variable, argAssign.get.expression)
           .setForStack(argAssign.get.variable.name,environment.getCurrentLine.get)
       } else {
-        environment
-          .setVariable(argAssign.get.variable, Result(argAssign.get.expression.resultNum.get+1)) // TODO: check for empty
+        val nextValueResult=environment.getValue(argAssign.get.variable).get.asInstanceOf[Result]
+        val nextValue=nextValueResult.resultNum.get+1
+
+        if(nextValue>argEndVal.get.resultNum.get)
+          environment.setNextLine(argNextStmt.get) // end of loop
+        else
+          environment
+          .setVariable(argAssign.get.variable, Result(nextValue)) // TODO: check for empty
+
       }
     }
-}
+  }
 
-
-  private def assignment(args:List[Token]):(Option[Assignment],List[Token])=
-    args match {
-      case head::_ =>
-        head match {
-          case assign:Assignment=>(Some(assign),args.tail)
-          case _=> (None,args.tail)
-        }
-      case Nil =>(None,args) // TODO: throw error???
+  private def decodeArgs(args:List[Token]):(Option[Assignment],Option[TO],Option[Expression],List[Token])={
+    args.take(3) match {
+      case assignment :: to :: endValue :: _
+        if(assignment.isInstanceOf[Assignment] && to.isInstanceOf[TO] &&
+          endValue.isInstanceOf[Expression]) =>
+        (Some(assignment.asInstanceOf[Assignment]),
+          Some(to.asInstanceOf[TO]),
+          Some(endValue.asInstanceOf[Expression]),
+          args.slice(3,args.length))
+      case _ => (None,None,None,args)
     }
-
-  private def to(args:List[Token]):(Option[TO],List[Token])=
-    args match {
-      case head::_ =>
-        head match {
-          case to:TO=>(Some(to),args.tail)
-          case _=> (None,args.tail)
-        }
-      case Nil =>(None,args) // TODO: throw error???
-    }
-
-  private def endValue(args:List[Token]):(Option[Expression],List[Token])=
-    args match {
-      case head::_ =>
-        head match {
-          case endV:Expression=>(Some(endV),args.tail)
-          case _=> (None,args.tail)
-        }
-      case Nil =>(None,args) // TODO: throw error???
-    }
+  }
 }
 
 object FOR {
   def apply():FOR=new FOR
 }
 
+class NEXT extends Statement {
+  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
+    val(argVariable,argsAfterVariable)=decodeArgs(args)
+    if(argVariable.isEmpty) environment // TODO: Throw error???
+    else
+      environment
+        .getFor(argVariable.get.name)
+        .map(environment.setNextLine)
+        .getOrElse(environment)
+  }
+
+  private def decodeArgs(args:List[Token]):(Option[Variable],List[Token])={
+    args.take(1) match {
+      case variable :: Nil
+        if(variable.isInstanceOf[Variable]) =>
+        (Some(variable.asInstanceOf[Variable]),args.slice(1,args.length))
+      case _ => (None,args)
+    }
+  }
+}
+
+object NEXT {
+  def apply():NEXT=new NEXT
+}
+
 class PRINT extends Statement {
   // print text to console
-  override def execute(args:List[Token],environment: Environment):Environment= {
+  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
     val output=expression(args).map(_.result.toString).getOrElse("")
     environment.consolePrintln(output)
   }
@@ -119,14 +153,6 @@ class PRINT extends Statement {
 
 object PRINT {
   def apply():PRINT=new PRINT
-}
-
-class NEXT extends Statement {
-  override def execute(args:List[Token],environment: Environment):Environment=environment
-}
-
-object NEXT {
-  def apply():NEXT=new NEXT
 }
 
 trait Keyword extends Token {
@@ -208,7 +234,7 @@ object Variable {
 
 class REM extends Statement {
   // ignore the line
-  override def execute(args:List[Token],environment: Environment):Environment=environment
+  override def execute(args:List[Token],program:Program,environment: Environment):Environment=environment
 }
 
 object REM {
@@ -217,7 +243,7 @@ object REM {
 
 class LET extends Statement {
   // print text to console
-  override def execute(args:List[Token],environment: Environment):Environment= {
+  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
     val assign=assignment(args)
     if(assign.isEmpty) environment // TODO: Throw error???
     else environment.setVariable(assign.get.variable,assign.get.expression)
@@ -238,3 +264,4 @@ class LET extends Statement {
 object LET {
   def apply():LET=new LET
 }
+

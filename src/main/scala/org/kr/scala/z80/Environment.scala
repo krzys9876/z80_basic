@@ -15,6 +15,9 @@ class Environment(
     val newLineStack=lineStack.changeTopTo(num)
     new Environment(variables,forStack,newLineStack,console)
   }
+  def setNextLine(num:Int):Environment={
+    new Environment(variables,forStack,lineStack,console,Some(num))
+  }
   def setForStack(name:String,line:Int):Environment={
     val newForStack=forStack.push(name,line)
     new Environment(variables,newForStack,lineStack,console)
@@ -38,9 +41,9 @@ class Environment(
         line match {
           case None=>this // TODO: Throw error???
           case Some(lineToExecute)=>
-            val afterEnv=lineToExecute.execute(initialEnv)
+            val afterEnv=lineToExecute.execute(program,initialEnv)
             // determine next line - either next line in program of other number saved by the executed line
-            val nextLineNum=afterEnv.nextLineNum.orElse(program.lineAfter(lineToExecute))
+            val nextLineNum=afterEnv.nextLineNum.orElse(program.lineNumAfter(lineToExecute))
             afterEnv.runLine(nextLineNum,program)
         }
     }
