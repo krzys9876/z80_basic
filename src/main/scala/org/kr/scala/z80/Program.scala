@@ -5,6 +5,15 @@ class Program(val lines:Vector[Line]) {
   def firstLineNumber:Option[Int]=
     if(lines.isEmpty) None
     else Some(lines(0).number)
+  def lineAfter(line:Line):Option[Int]={
+    val index=lines.indexOf(line)
+    index match {
+      case i if i<0=> None // TODO: Throw exception???
+      case i if i==lines.length-1 => None // end of program
+      case i=>Some(lines(i+1).number)
+    }
+  }
+  def line(lineNum:Int):Option[Line]=lines.find(_.number==lineNum)
 }
 
 trait Listable {
@@ -45,10 +54,10 @@ class FOR extends Statement {
       if (lineFor.isEmpty) {
         environment
           .setVariable(argAssign.get.variable, argAssign.get.expression)
-          .setForStack(argAssign.get.variable.name,10) // TODO: hardcode
+          .setForStack(argAssign.get.variable.name,environment.getCurrentLine.get)
       } else {
         environment
-        //  .setVariable(argAssign.get.variable, Result(argAssign.get.))
+          .setVariable(argAssign.get.variable, Result(argAssign.get.expression.resultNum.get+1)) // TODO: check for empty
       }
     }
 }
@@ -148,15 +157,37 @@ abstract class Expression extends Token {
       case _=>"TYPE NOT SUPPORTED"
     }
 
-  def result:Any
+  val result:Any
+  val resultNum:Option[BigDecimal]
+  val resultText:Option[String]
 }
 
 case class Result(value:Any) extends Expression {
-  def result:Any=value
+  override val result:Any=value
+  override val resultNum:Option[BigDecimal]=
+    value match {
+      case n:BigDecimal=>Some(n)
+      case _=>None
+    }
+  override val resultText:Option[String]=
+    value match {
+      case s:String=>Some(s)
+      case _=>None
+    }
 }
 
 object Result {
-  def apply(value:Any):Result=new Result(value)
+  def apply(value:Any):Result= {
+    val valueTyped=value match {
+      case n:Int=>BigDecimal(n)
+      case n:Long=>BigDecimal(n)
+      case n:Double=>BigDecimal(n)
+      case n:BigDecimal=>n
+      case b:Boolean=>BigDecimal(if(b) 1 else 0)
+      case s:String=>s
+    }
+    new Result(valueTyped)
+  }
 }
 
 class Assignment(val variable:Variable,val expression:Expression) extends Token {

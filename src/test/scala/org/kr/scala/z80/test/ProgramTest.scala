@@ -49,7 +49,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("A")).contains(Result(123L)))
       assert(environment.getValue(Variable("B")).contains(Result(234.123)))
       assert(environment.getValue(Variable("C")).contains(Result("qwerty")))
-      assert(environment.getValue(Variable("D")).contains(Result(false)))
+      assert(environment.getValue(Variable("D")).contains(Result(0)))
     }
     Scenario("Run for loop") {
       Given("a program consisting of only for statement")

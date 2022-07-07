@@ -1,10 +1,13 @@
 package org.kr.scala.z80
 
+import scala.annotation.tailrec
+
 class Environment(
                    private val variables:Map[Variable,Any],
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
-                   val console:List[String]) {
+                   val console:List[String],
+                   val nextLineNum:Option[Int]=None) {
   def setVariable(variable: Variable,value:Any):Environment=
     new Environment(variables ++ Map(variable->value),forStack,lineStack,console)
   def getValue(variable: Variable):Option[Any]=variables.get(variable)
@@ -20,12 +23,27 @@ class Environment(
   def getCurrentLine:Option[Int]=lineStack.top
 
   def run(program:Program):Environment= {
-    program.firstLineNumber.map(doRun(_,program)).getOrElse(this)
+    runLine(program.firstLineNumber,program)
   }
 
-  private def doRun(startLineNum:Int,program: Program):Environment= {
-    val initialEnv = new Environment(variables, forStack, lineStack.push(startLineNum), console)
-    program.lines.foldLeft(initialEnv)((env, line) => line.execute(env))
+  @tailrec
+  final def runLine(lineNum:Option[Int], program: Program):Environment= {
+    lineNum match {
+      case None=>this // end of program
+      case Some(lineNm) =>
+        // init environment with current line
+        val initialEnv = setLine(lineNm)
+        // find line by number (it should be there)
+        val line=program.line(lineNm)
+        line match {
+          case None=>this // TODO: Throw error???
+          case Some(lineToExecute)=>
+            val afterEnv=lineToExecute.execute(initialEnv)
+            // determine next line - either next line in program of other number saved by the executed line
+            val nextLineNum=afterEnv.nextLineNum.orElse(program.lineAfter(lineToExecute))
+            afterEnv.runLine(nextLineNum,program)
+        }
+    }
   }
 
   def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
@@ -63,7 +81,7 @@ class LineStack(private val stack:List[Int]) {
     }
   def changeTopTo(newTop:Int):LineStack=
     stack match {
-      case Nil=>this // or throw exception - TBD
+      case Nil=>new LineStack(List(newTop)) // initialize stack
       case head::Nil=>new LineStack(List(newTop))
       case head::tail=>new LineStack(List(newTop) ++ tail)
     }
