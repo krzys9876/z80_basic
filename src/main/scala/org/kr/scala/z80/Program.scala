@@ -2,7 +2,7 @@ package org.kr.scala.z80
 
 class Program(val lines:Vector[Line]) {
   def show():Unit=lines.foreach(line=>println(line.list))
-  def firstLineNumber:Option[Int]=
+  def firstLineNumber:Option[LineNumber]=
     if(lines.isEmpty) None
     else Some(lines(0).number)
   def lineAfter(line:Line):Option[Line]={
@@ -13,17 +13,19 @@ class Program(val lines:Vector[Line]) {
       case i=>Some(lines(i+1))
     }
   }
-  def lineNumAfter(line:Line):Option[Int]= lineAfter(line).map(_.number)
-  def line(lineNum:Int):Option[Line]=lines.find(_.number==lineNum)
+  def lineNumAfter(line:Line):Option[LineNumber]=
+    lineAfter(line).map(_.number)
+      .orElse(Some(LineNumber(Int.MaxValue,endOfProgram = true)))
+  def line(lineNum:LineNumber):Option[Line]=lines.find(_.number==lineNum)
 
-  def getNextFor(variable: Variable,from:Int):Option[Line]={
+  def getNextFor(variable: Variable,from:LineNumber):Option[LineNumber]={
     val forLine=lines.find(_.number==from)
     val forLineIndex=forLine.map(lines.indexOf).getOrElse(-1)
     if(forLineIndex>=0) {
       lines
         .slice(forLineIndex,lines.length)
         .find(_.isNextFor(variable))
-        .flatMap(lineAfter)
+        .flatMap(lineNumAfter)
     }
     else None
   }
@@ -34,7 +36,11 @@ trait Listable {
   def listName:String=this.getClass.getSimpleName
 }
 
-class Line(val number:Int,val statement:Statement,val tokens:List[Token]) extends Listable {
+case class LineNumber(num:Int,endOfProgram:Boolean=false) {
+  override def toString: String = num.toString
+}
+
+class Line(val number:LineNumber,val statement:Statement,val tokens:List[Token]) extends Listable {
   override def list:String={
     val txtLineNum=f"$number "
     val txtStatement=f"${statement.list} "
@@ -66,7 +72,6 @@ class FOR extends Statement {
     val(argAssign,argTo,argEndVal,argsAfterEndVal)=decodeArgs(args)
     val argNextStmt= program
       .getNextFor(argAssign.get.variable,environment.getCurrentLine.get)
-      .map(_.number)
 
     if(argAssign.isEmpty || argTo.isEmpty || argEndVal.isEmpty) environment // TODO: Throw error???
     else {
@@ -92,8 +97,8 @@ class FOR extends Statement {
   private def decodeArgs(args:List[Token]):(Option[Assignment],Option[TO],Option[Expression],List[Token])={
     args.take(3) match {
       case assignment :: to :: endValue :: _
-        if(assignment.isInstanceOf[Assignment] && to.isInstanceOf[TO] &&
-          endValue.isInstanceOf[Expression]) =>
+        if assignment.isInstanceOf[Assignment] && to.isInstanceOf[TO] &&
+          endValue.isInstanceOf[Expression] =>
         (Some(assignment.asInstanceOf[Assignment]),
           Some(to.asInstanceOf[TO]),
           Some(endValue.asInstanceOf[Expression]),
@@ -120,8 +125,7 @@ class NEXT extends Statement {
 
   private def decodeArgs(args:List[Token]):(Option[Variable],List[Token])={
     args.take(1) match {
-      case variable :: Nil
-        if(variable.isInstanceOf[Variable]) =>
+      case variable :: Nil if variable.isInstanceOf[Variable] =>
         (Some(variable.asInstanceOf[Variable]),args.slice(1,args.length))
       case _ => (None,args)
     }
