@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{Assignment, Environment, FOR, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, TO, Variable}
+import org.kr.scala.z80.{Assignment, Environment, FOR, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -9,9 +9,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run only REM lines") {
       Given("a program consisting of REM lines")
       val program=new Program(Vector(
-        new Line(LineNumber(5),REM("comment1"),List()),
-        new Line(LineNumber(15),REM("comment2"),List()),
-        new Line(LineNumber(25),REM("comment3"),List()),
+        new Line(LineNumber(5),REM("comment1")),
+        new Line(LineNumber(15),REM("comment2")),
+        new Line(LineNumber(25),REM("comment3")),
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -22,8 +22,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run only print lines") {
       Given("a program consisting only print lines")
       val program=new Program(Vector(
-        new Line(LineNumber(10),PRINT(Result("aaaa")),List()),
-        new Line(LineNumber(20),PRINT(Result("bbbb")),List())
+        new Line(LineNumber(10),PRINT(Result("aaaa"))),
+        new Line(LineNumber(20),PRINT(Result("bbbb")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -35,10 +35,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run assignment to a variable") {
       Given("a program consisting of assignment lines")
       val program=new Program(Vector(
-        new Line(LineNumber(30),LET(Assignment(Variable("A"),Result(123L))),List()),
-        new Line(LineNumber(35),LET(Assignment(Variable("B"),Result(234.123))),List()),
-        new Line(LineNumber(40),LET(Assignment(Variable("C"),Result("qwerty"))),List()),
-        new Line(LineNumber(45),LET(Assignment(Variable("D"),Result(false))),List())
+        new Line(LineNumber(30),LET(Assignment(Variable("A"),Result(123L)))),
+        new Line(LineNumber(35),LET(Assignment(Variable("B"),Result(234.123)))),
+        new Line(LineNumber(40),LET(Assignment(Variable("C"),Result("qwerty")))),
+        new Line(LineNumber(45),LET(Assignment(Variable("D"),Result(false))))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -53,7 +53,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Initialize for loop") {
       Given("a program consisting of only for statement")
       val program=new Program(Vector(
-        new Line(LineNumber(10),FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(3)))
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(3)))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -66,8 +66,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run empty for loop") {
       Given("a program consisting of empty for loop without step")
       val program=new Program(Vector(
-        new Line(LineNumber(10),FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(4))),
-        new Line(LineNumber(20),NEXT(Variable("I")),List())
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(4))),
+        new Line(LineNumber(20),NEXT(Variable("I")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -79,10 +79,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run non-empty for loop with lines after for loop") {
       Given("a program consisting of for loop without step")
       val program=new Program(Vector(
-        new Line(LineNumber(10),FOR(),List(Assignment(Variable("I"),Result(1)),TO(),Result(3))),
-        new Line(LineNumber(20),PRINT(Result("A")),List()),
-        new Line(LineNumber(30),NEXT(Variable("I")),List()),
-        new Line(LineNumber(40),PRINT(Result("B")),List())
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(3))),
+        new Line(LineNumber(20),PRINT(Result("A"))),
+        new Line(LineNumber(30),NEXT(Variable("I"))),
+        new Line(LineNumber(40),PRINT(Result("B")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty

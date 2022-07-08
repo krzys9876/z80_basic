@@ -1,29 +1,33 @@
 package org.kr.scala.z80
 
-class Program(val lines:Vector[Line]) {
-  def show():Unit=lines.foreach(line=>println(line.list))
-  def firstLineNumber:Option[LineNumber]=
-    if(lines.isEmpty) None
+class Program(val lines: Vector[Line]) {
+  def show(): Unit = lines.foreach(line => println(line.list))
+
+  def firstLineNumber: Option[LineNumber] =
+    if (lines.isEmpty) None
     else Some(lines(0).number)
-  def lineAfter(line:Line):Option[Line]={
-    val index=lines.indexOf(line)
+
+  def lineAfter(line: Line): Option[Line] = {
+    val index = lines.indexOf(line)
     index match {
-      case i if i<0=> None // TODO: Throw exception???
-      case i if i==lines.length-1 => None // end of program
-      case i=>Some(lines(i+1))
+      case i if i < 0 => None // TODO: Throw exception???
+      case i if i == lines.length - 1 => None // end of program
+      case i => Some(lines(i + 1))
     }
   }
-  def lineNumAfter(line:Line):Option[LineNumber]=
-    lineAfter(line).map(_.number)
-      .orElse(Some(LineNumber(Int.MaxValue,endOfProgram = true)))
-  def line(lineNum:LineNumber):Option[Line]=lines.find(_.number==lineNum)
 
-  def getNextFor(variable: Variable,from:LineNumber):Option[LineNumber]={
-    val forLine=lines.find(_.number==from)
-    val forLineIndex=forLine.map(lines.indexOf).getOrElse(-1)
-    if(forLineIndex>=0) {
+  def lineNumAfter(line: Line): Option[LineNumber] =
+    lineAfter(line).map(_.number)
+      .orElse(Some(LineNumber(Int.MaxValue, endOfProgram = true)))
+
+  def line(lineNum: LineNumber): Option[Line] = lines.find(_.number == lineNum)
+
+  def getNextFor(variable: Variable, from: LineNumber): Option[LineNumber] = {
+    val forLine = lines.find(_.number == from)
+    val forLineIndex = forLine.map(lines.indexOf).getOrElse(-1)
+    if (forLineIndex >= 0) {
       lines
-        .slice(forLineIndex,lines.length)
+        .slice(forLineIndex, lines.length)
         .find(_.isNextFor(variable))
         .flatMap(lineNumAfter)
     }
@@ -32,86 +36,68 @@ class Program(val lines:Vector[Line]) {
 }
 
 trait Listable {
-  def list:String
-  def listName:String=this.getClass.getSimpleName
+  def list: String
+
+  def listName: String = this.getClass.getSimpleName
 }
 
-case class LineNumber(num:Int,endOfProgram:Boolean=false) {
+case class LineNumber(num: Int, endOfProgram: Boolean = false) {
   override def toString: String = num.toString
 }
 
-class Line(val number:LineNumber,val statement:Statement,val tokens:List[Token]) extends Listable {
-  override def list:String={
-    val txtLineNum=f"$number "
-    val txtStatement=f"${statement.list} "
-    val txtTokens=tokens.foldLeft("")((text,token)=>text+token.list+" ")
-    txtLineNum+txtStatement+txtTokens
-  }
-  def execute(program:Program,env:Environment):Environment={
-    val newEnv=env.setLine(number)
-    statement.execute(tokens,program,newEnv)
+class Line(val number: LineNumber, val statement: Statement) extends Listable {
+  override def list: String = f"$number ${statement.list}"
+
+  def execute(program: Program, env: Environment): Environment = {
+    val newEnv = env.setLine(number)
+    statement.execute(program, newEnv)
   }
 
-  def isNextFor(variable: Variable):Boolean={
+  def isNextFor(variable: Variable): Boolean = {
     statement.isInstanceOf[NEXT] &&
-      statement.asInstanceOf[NEXT].variable==variable
+      statement.asInstanceOf[NEXT].variable == variable
   }
 }
 
 trait Statement extends Listable {
-  override def list:String=listName
-  def execute(args:List[Token],program:Program,environment:Environment):Environment
+  override def list: String = listName
+
+  def execute(program: Program, environment: Environment): Environment
 }
 
 trait Token extends Listable
 
-class FOR extends Statement {
-  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    val(argAssign,argTo,argEndVal,argsAfterEndVal)=decodeArgs(args)
-    val argNextStmt= program
-      .getNextFor(argAssign.get.variable,environment.getCurrentLine.get)
+class FOR(val assignment: Assignment, val endValue: Expression) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = {
+    val argNextStmt = program
+      .getNextFor(assignment.variable, environment.getCurrentLine.get)
 
-    if(argAssign.isEmpty || argTo.isEmpty || argEndVal.isEmpty) environment // TODO: Throw error???
-    else {
-      val lineFor = environment.getFor(argAssign.get.variable.name)
-      if (lineFor.isEmpty) { // start of loop
+    val lineFor = environment.getFor(assignment.variable.name)
+    if (lineFor.isEmpty) { // start of loop
+      environment
+        .setVariable(assignment.variable, assignment.expression)
+        .setForStack(assignment.variable.name, environment.getCurrentLine.get)
+    } else {
+      val nextValueResult = environment.getValue(assignment.variable).get.asInstanceOf[Result]
+      val nextValue = nextValueResult.resultNum.get + 1
+
+      if (nextValue > endValue.resultNum.get)
+        environment.setNextLine(argNextStmt.get) // end of loop
+      else
         environment
-          .setVariable(argAssign.get.variable, argAssign.get.expression)
-          .setForStack(argAssign.get.variable.name,environment.getCurrentLine.get)
-      } else {
-        val nextValueResult=environment.getValue(argAssign.get.variable).get.asInstanceOf[Result]
-        val nextValue=nextValueResult.resultNum.get+1
-
-        if(nextValue>argEndVal.get.resultNum.get)
-          environment.setNextLine(argNextStmt.get) // end of loop
-        else
-          environment
-          .setVariable(argAssign.get.variable, Result(nextValue)) // TODO: check for empty
-
-      }
+          .setVariable(assignment.variable, Result(nextValue)) // TODO: check for empty
     }
   }
 
-  private def decodeArgs(args:List[Token]):(Option[Assignment],Option[TO],Option[Expression],List[Token])={
-    args.take(3) match {
-      case assignment :: to :: endValue :: _
-        if assignment.isInstanceOf[Assignment] && to.isInstanceOf[TO] &&
-          endValue.isInstanceOf[Expression] =>
-        (Some(assignment.asInstanceOf[Assignment]),
-          Some(to.asInstanceOf[TO]),
-          Some(endValue.asInstanceOf[Expression]),
-          args.slice(3,args.length))
-      case _ => (None,None,None,args)
-    }
-  }
+  override def list: String = f"FOR ${assignment.variable.name} = ${assignment.expression.list} TO ${endValue.list}"
 }
 
 object FOR {
-  def apply():FOR=new FOR
+  def apply(assignment: Assignment, expression: Expression): FOR = new FOR(assignment,expression)
 }
 
 class NEXT(val variable: Variable) extends Statement {
-  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
+  override def execute(program: Program, environment: Environment): Environment = {
     environment
       .getFor(variable.name)
       .map(environment.setNextLine)
@@ -122,121 +108,111 @@ class NEXT(val variable: Variable) extends Statement {
 }
 
 object NEXT {
-  def apply(variable: Variable):NEXT=new NEXT(variable)
+  def apply(variable: Variable): NEXT = new NEXT(variable)
 }
 
 class PRINT(val expression: Expression) extends Statement {
   // print text to console
-  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    val output=expression.result.toString
+  override def execute(program: Program, environment: Environment): Environment = {
+    val output = expression.result.toString
     environment.consolePrintln(output)
   }
 
-  override def list: String = f"PRINT \"${expression.toString}\""
+  override def list: String = f"PRINT \"${expression.list}\""
 }
 
 object PRINT {
-  def apply(expression: Expression):PRINT=new PRINT(expression)
+  def apply(expression: Expression): PRINT = new PRINT(expression)
 }
 
 trait Keyword extends Token {
-  override def list:String=listName
-}
-
-class TO extends Keyword
-
-object TO {
-  def apply():TO=new TO
-}
-
-class STEP extends Keyword
-
-object STEP {
-  def apply():STEP=new STEP
+  override def list: String = listName
 }
 
 abstract class Expression extends Token {
-  override def list:String=
+  override def list: String =
     result match {
-      case s: String=>s
-      case n:BigDecimal=>n.toString()
-      case n:Int=>n.toString
-      case n:Long=>n.toString
-      case n:Double=>n.toString
-      case b:Boolean=>b.toString
-      case _=>"TYPE NOT SUPPORTED"
+      case s: String => s
+      case n: BigDecimal => n.toString()
+      case n: Int => n.toString
+      case n: Long => n.toString
+      case n: Double => n.toString
+      case b: Boolean => b.toString
+      case _ => "TYPE NOT SUPPORTED"
     }
 
-  val result:Any
-  val resultNum:Option[BigDecimal]
-  val resultText:Option[String]
+  val result: Any
+  val resultNum: Option[BigDecimal]
+  val resultText: Option[String]
 }
 
-case class Result(value:Any) extends Expression {
-  override val result:Any=value
-  override val resultNum:Option[BigDecimal]=
+case class Result(value: Any) extends Expression {
+  override val result: Any = value
+  override val resultNum: Option[BigDecimal] =
     value match {
-      case n:BigDecimal=>Some(n)
-      case _=>None
+      case n: BigDecimal => Some(n)
+      case _ => None
     }
-  override val resultText:Option[String]=
+  override val resultText: Option[String] =
     value match {
-      case s:String=>Some(s)
-      case _=>None
+      case s: String => Some(s)
+      case _ => None
     }
+
+  override def list: String = resultText.getOrElse(resultNum.map(_.toString).getOrElse("EMPTY"))
 }
 
 object Result {
-  def apply(value:Any):Result= {
-    val valueTyped=value match {
-      case n:Int=>BigDecimal(n)
-      case n:Long=>BigDecimal(n)
-      case n:Double=>BigDecimal(n)
-      case n:BigDecimal=>n
-      case b:Boolean=>BigDecimal(if(b) 1 else 0)
-      case s:String=>s
+  def apply(value: Any): Result = {
+    val valueTyped = value match {
+      case n: Int => BigDecimal(n)
+      case n: Long => BigDecimal(n)
+      case n: Double => BigDecimal(n)
+      case n: BigDecimal => n
+      case b: Boolean => BigDecimal(if (b) 1 else 0)
+      case s: String => s
     }
     new Result(valueTyped)
   }
 }
 
-class Assignment(val variable:Variable,val expression:Expression) extends Token {
-  override def list:String=f"${variable.list}=${expression.list}"
+class Assignment(val variable: Variable, val expression: Expression) extends Token {
+  override def list: String = f"${variable.list}=${expression.list}"
 }
 
 object Assignment {
-  def apply(variable:Variable,expression: Expression):Assignment=new Assignment(variable,expression)
+  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(variable, expression)
 }
 
-case class Variable(name:String) extends Token {
-  override def list:String=name
+case class Variable(name: String) extends Token {
+  override def list: String = name
 }
 
 object Variable {
-  def apply(name:String):Variable=new Variable(name)
+  def apply(name: String): Variable = new Variable(name)
 }
 
-class REM(val comment:String) extends Statement {
+class REM(val comment: String) extends Statement {
   // ignore the line
-  override def execute(args:List[Token],program:Program,environment: Environment):Environment=environment
+  override def execute(program: Program, environment: Environment): Environment = environment
 
   override def list: String = f"REM $comment"
 }
 
 object REM {
-  def apply(comment:String):REM=new REM(comment)
+  def apply(comment: String): REM = new REM(comment)
 }
 
 class LET(val assignment: Assignment) extends Statement {
   // print text to console
-  override def execute(args:List[Token],program:Program,environment: Environment):Environment= {
-    environment.setVariable(assignment.variable,assignment.expression)
+  override def execute(program: Program, environment: Environment): Environment = {
+    environment.setVariable(assignment.variable, assignment.expression)
   }
 
-  override def list: String = f"LIST ${assignment.variable.name} = ${assignment.expression.toString}"
+  override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"
 }
 
 object LET {
-  def apply(assignment: Assignment):LET=new LET(assignment)
+  def apply(assignment: Assignment): LET = new LET(assignment)
 }
 
