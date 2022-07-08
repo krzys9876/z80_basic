@@ -92,5 +92,38 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("I")).contains(Result(3)))
       assert(environment.console==List("A\n","A\n","A\n","B\n"))
     }
+    Scenario("Run non-empty for loop with lines after for loop and step") {
+      Given("a program consisting of for loop without step")
+      val program=new Program(Vector(
+        new Line(LineNumber(5),FOR(Assignment(Variable("I"),Result(1)),Result(7),Some(Result(2)))),
+        new Line(LineNumber(10),PRINT(Result("A"))),
+        new Line(LineNumber(15),NEXT(Variable("I"))),
+        new Line(LineNumber(20),PRINT(Result("B")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("loops is executed properly and looping variable is set to end value")
+      assert(environment.getCurrentLine.contains(LineNumber(20)))
+      assert(environment.getValue(Variable("I")).contains(Result(7)))
+      assert(environment.console==List("A\n","A\n","A\n","A\n","B\n"))
+    }
+    Scenario("Run non-empty for loop with lines after for loop and step not matching end value") {
+      Given("a program consisting of for loop without step")
+      val program=new Program(Vector(
+        new Line(LineNumber(5),FOR(Assignment(Variable("I"),Result(1)),Result(8),Some(Result(2)))),
+        new Line(LineNumber(10),PRINT(Result("A"))),
+        new Line(LineNumber(15),NEXT(Variable("I"))),
+        new Line(LineNumber(20),PRINT(Result("B")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("loops is executed properly")
+      And("looping variable is set to a value matching step bit not greater than end value")
+      assert(environment.getCurrentLine.contains(LineNumber(20)))
+      assert(environment.getValue(Variable("I")).contains(Result(7)))
+      assert(environment.console==List("A\n","A\n","A\n","A\n","B\n"))
+    }
   }
 }

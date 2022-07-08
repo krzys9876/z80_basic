@@ -67,7 +67,7 @@ trait Statement extends Listable {
 
 trait Token extends Listable
 
-class FOR(val assignment: Assignment, val endValue: Expression) extends Statement {
+class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[Expression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
     val argNextStmt = program
       .getNextFor(assignment.variable, environment.getCurrentLine.get)
@@ -79,7 +79,8 @@ class FOR(val assignment: Assignment, val endValue: Expression) extends Statemen
         .setForStack(assignment.variable.name, environment.getCurrentLine.get)
     } else {
       val nextValueResult = environment.getValue(assignment.variable).get.asInstanceOf[Result]
-      val nextValue = nextValueResult.resultNum.get + 1
+      val stepNum=step.flatMap(_.resultNum).getOrElse(BigDecimal(1))
+      val nextValue = nextValueResult.resultNum.get + stepNum
 
       if (nextValue > endValue.resultNum.get)
         environment.setNextLine(argNextStmt.get) // end of loop
@@ -89,11 +90,14 @@ class FOR(val assignment: Assignment, val endValue: Expression) extends Statemen
     }
   }
 
-  override def list: String = f"FOR ${assignment.variable.name} = ${assignment.expression.list} TO ${endValue.list}"
+  override def list: String = f"FOR ${assignment.variable.name} = " +
+    f"${assignment.expression.list} TO ${endValue.list}" +
+      step.map(s=>f" STEP ${s.list}").getOrElse("")
 }
 
 object FOR {
-  def apply(assignment: Assignment, expression: Expression): FOR = new FOR(assignment,expression)
+  def apply(assignment: Assignment, expression: Expression, step:Option[Expression]=None): FOR =
+    new FOR(assignment,expression,step)
 }
 
 class NEXT(val variable: Variable) extends Statement {
