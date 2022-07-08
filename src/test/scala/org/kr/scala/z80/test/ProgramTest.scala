@@ -61,7 +61,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("environment contains looping variable with initial value")
       assert(environment.getCurrentLine.contains(LineNumber(10)))
       assert(environment.getValue(Variable("I")).contains(Result(1)))
-      assert(environment.getFor("I").contains(LineNumber(10)))
+      assert(environment.getFor(Left("I")).contains(LineNumber(10)))
     }
     Scenario("Run empty for loop") {
       Given("a program consisting of empty for loop without step")
@@ -124,6 +124,30 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getCurrentLine.contains(LineNumber(20)))
       assert(environment.getValue(Variable("I")).contains(Result(7)))
       assert(environment.console==List("A\n","A\n","A\n","A\n","B\n"))
+    }
+    Scenario("Run nested for loops") {
+      Given("a program consisting of nested for loops")
+      val program=new Program(Vector(
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(3))),
+        new Line(LineNumber(20),PRINT(Result("X"))),
+        new Line(LineNumber(30),FOR(Assignment(Variable("J"),Result(1)),Result(2))),
+        new Line(LineNumber(40),PRINT(Result("Y"))),
+        new Line(LineNumber(50),NEXT(Variable("J"))),
+        new Line(LineNumber(60),NEXT(Variable("I"))),
+        new Line(LineNumber(70),PRINT(Result("Z")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("loops is executed properly and looping variable is set to end value")
+      assert(environment.getCurrentLine.contains(LineNumber(70)))
+      assert(environment.getValue(Variable("I")).contains(Result(3)))
+      assert(environment.getValue(Variable("J")).contains(Result(2)))
+      assert(environment.console==List(
+        "X\n","Y\n","Y\n",
+        "X\n","Y\n","Y\n",
+        "X\n","Y\n","Y\n",
+        "Z\n"))
     }
   }
 }

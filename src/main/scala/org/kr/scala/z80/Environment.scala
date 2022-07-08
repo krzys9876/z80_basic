@@ -18,11 +18,11 @@ class Environment(
   def setNextLine(num:LineNumber):Environment={
     new Environment(variables,forStack,lineStack,console,Some(num))
   }
-  def setForStack(name:String,line:LineNumber):Environment={
-    val newForStack=forStack.push(name,line)
-    new Environment(variables,newForStack,lineStack,console)
-  }
-  def getFor(name:String):Option[LineNumber]=forStack.lineFor(name)
+  def setForStack(name:String,line:LineNumber):Environment=
+    new Environment(variables,forStack.push(name,line),lineStack,console)
+  def clearForStack(name:String):Environment=
+    new Environment(variables,forStack.pop(name),lineStack,console)
+  def getFor(nameOrBeforeLine:Either[String,LineNumber]):Option[LineNumber]=forStack.lineFor(nameOrBeforeLine)
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
   def run(program:Program):Environment= {
@@ -63,7 +63,21 @@ class ForStack(private val map:Map[String,LineNumber]) {
   def isEmpty:Boolean=map.isEmpty
   def push(name:String,line:LineNumber):ForStack=new ForStack(map ++ Map(name->line))
   def pop(name:String):ForStack=new ForStack(map.removed(name))
-  def lineFor(name:String):Option[LineNumber]=map.get(name)
+  def lineFor(nameOrLine:Either[String,LineNumber]):Option[LineNumber]= {
+    nameOrLine match {
+      case Left(nm)=>map.get(nm)
+      case Right(beforeNum)=>
+        map.filter(entry=>entry._2.num<beforeNum.num)
+        .foldLeft(Option.empty[LineNumber])(
+        (returnLine,entry)=>
+          returnLine match {
+            case None=> Some(entry._2)
+            case Some(retLine)=>
+              if(entry._2.num>retLine.num) Some(entry._2) else Some(retLine)
+          }
+      )
+    }
+  }
 }
 
 object ForStack {

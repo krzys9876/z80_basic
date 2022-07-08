@@ -1,5 +1,7 @@
 package org.kr.scala.z80
 
+import scala.util.Try
+
 trait Listable {
   // list not as a container but as 'listing', textual representation of an element of the program
   def list: String
@@ -18,8 +20,11 @@ class Line(val number: LineNumber, val statement: Statement) extends Listable {
   }
 
   def isNextFor(variable: Variable): Boolean = {
-    statement.isInstanceOf[NEXT] &&
-      statement.asInstanceOf[NEXT].variable == variable
+    val nextStmt=Try(Some(statement.asInstanceOf[NEXT])).getOrElse(None)
+    nextStmt match {
+      case None=>false
+      case Some(next)=>next.variable.isEmpty || next.variable.contains(variable)
+    }
   }
 }
 

@@ -10,7 +10,7 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
     val argNextStmt = program
       .getNextFor(assignment.variable, environment.getCurrentLine.get)
 
-    val lineFor = environment.getFor(assignment.variable.name)
+    val lineFor = environment.getFor(Left(assignment.variable.name))
     if (lineFor.isEmpty) { // start of loop
       environment
         .setVariable(assignment.variable, assignment.expression)
@@ -21,7 +21,7 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
       val nextValue = nextValueResult.resultNum.get + stepNum
 
       if (nextValue > endValue.resultNum.get)
-        environment.setNextLine(argNextStmt.get) // end of loop
+        environment.clearForStack(assignment.variable.name).setNextLine(argNextStmt.get) // end of loop
       else
         environment
           .setVariable(assignment.variable, Result(nextValue)) // TODO: check for empty
@@ -41,19 +41,20 @@ object FOR {
 //TODO: replace variable with optional list of variables
 // Empty list means that NEXT terminates the most recent FOR loop)
 // Multiple variables are treated as consecutive NEXT statements
-class NEXT(val variable: Variable) extends Statement {
+class NEXT(val variable: Option[Variable]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
     environment
-      .getFor(variable.name)
+      .getFor(variable.map(v=>Left(v.name)).getOrElse(Right(environment.getCurrentLine.get)))
       .map(environment.setNextLine)
       .getOrElse(environment)
   }
 
-  override def list: String = f"NEXT ${variable.name}"
+  override def list: String = f"NEXT"+variable.map(" "+_.name).getOrElse("")
 }
 
 object NEXT {
-  def apply(variable: Variable): NEXT = new NEXT(variable)
+  def apply(variable: Variable): NEXT = new NEXT(Some(variable))
+  def apply(): NEXT = new NEXT(None)
 }
 
 class PRINT(val expression: Expression) extends Statement {
