@@ -38,6 +38,9 @@ object FOR {
     new FOR(assignment,expression,step)
 }
 
+//TODO: replace variable with optional list of variables
+// Empty list means that NEXT terminates the most recent FOR loop)
+// Multiple variables are treated as consecutive NEXT statements
 class NEXT(val variable: Variable) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
     environment
