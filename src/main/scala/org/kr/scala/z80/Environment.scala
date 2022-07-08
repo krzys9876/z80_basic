@@ -63,20 +63,25 @@ class ForStack(private val map:Map[String,LineNumber]) {
   def isEmpty:Boolean=map.isEmpty
   def push(name:String,line:LineNumber):ForStack=new ForStack(map ++ Map(name->line))
   def pop(name:String):ForStack=new ForStack(map.removed(name))
+
+  // find 'for' statement for a given variable of any 'for' before given line number
   def lineFor(nameOrLine:Either[String,LineNumber]):Option[LineNumber]= {
     nameOrLine match {
       case Left(nm)=>map.get(nm)
-      case Right(beforeNum)=>
-        map.filter(entry=>entry._2.num<beforeNum.num)
-        .foldLeft(Option.empty[LineNumber])(
-        (returnLine,entry)=>
-          returnLine match {
-            case None=> Some(entry._2)
-            case Some(retLine)=>
-              if(entry._2.num>retLine.num) Some(entry._2) else Some(retLine)
-          }
-      )
+      case Right(beforeNum)=>findLineBefore(beforeNum)
     }
+  }
+
+  private def findLineBefore(beforeNum: LineNumber):Option[LineNumber]={
+    map.values.toList.filter(_.num<beforeNum.num)
+      .foldLeft(Option.empty[LineNumber])(
+        (returnLine, lineNum) =>
+          returnLine match {
+            case None => Some(lineNum)
+            case Some(retLine) =>
+              if (lineNum.num > retLine.num) Some(lineNum) else Some(retLine)
+          }
+        )
   }
 }
 
