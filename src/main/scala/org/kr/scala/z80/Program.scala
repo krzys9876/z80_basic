@@ -23,14 +23,16 @@ class Program(val lines: Vector[Line]) {
   def line(lineNum: LineNumber): Option[Line] = lines.find(_.number == lineNum)
 
   def getNextFor(variable: Variable, from: LineNumber): Option[LineNumber] = {
-    val forLine = lines.find(_.number == from)
-    val forLineIndex = forLine.map(lines.indexOf).getOrElse(-1)
-    if (forLineIndex >= 0) {
-      lines
-        .slice(forLineIndex, lines.length)
-        .find(_.isNextFor(variable))
-        .flatMap(lineNumAfter)
+    val forLineIndex = lines
+      .find(_.number == from)
+      .map(lines.indexOf).getOrElse(-1)
+    forLineIndex match {
+      case index if index >= 0 =>
+        lines
+          .slice(forLineIndex, lines.length)
+          .find(_.isNextFor(variable))
+          .flatMap(lineNumAfter)
+      case _ => None
     }
-    else None
   }
 }
