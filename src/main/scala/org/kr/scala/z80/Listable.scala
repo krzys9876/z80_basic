@@ -3,7 +3,7 @@ package org.kr.scala.z80
 import scala.util.Try
 
 trait Listable {
-  // list not as a container but as 'listing', textual representation of an element of the program
+  // 'list' is not a container but rather a verb 'to list', i.e. generate textual representation of an element of the program
   def list: String
 }
 
