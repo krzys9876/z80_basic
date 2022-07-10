@@ -31,7 +31,8 @@ class Program(val lines: Vector[Line]) {
         lines
           .slice(forLineIndex, lines.length)
           .find(_.isNextFor(variable))
-          .flatMap(lineNumAfter)
+          .map(_.number)
+          //.flatMap(lineNumAfter)
       case _ => None
     }
   }

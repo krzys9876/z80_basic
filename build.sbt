@@ -7,6 +7,7 @@ scalaVersion := "2.13.8"
 organization := "org.kr.scala.z80"
 
 val coreDependencies = Seq(
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
 )
 
 val testDependencies = Seq(

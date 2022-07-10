@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{Assignment, Environment, FOR, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, Variable}
+import org.kr.scala.z80.{Assignment, Environment, FOR, ForState, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -61,7 +61,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("environment contains looping variable with initial value")
       assert(environment.getCurrentLine.contains(LineNumber(10)))
       assert(environment.getValue(Variable("I")).contains(Result(1)))
-      assert(environment.getFor(Left("I")).contains(LineNumber(10)))
+      assert(environment.getFor(Variable("I")).contains(ForState(Variable("I"),LineNumber(10))))
     }
     Scenario("Run empty for loop") {
       Given("a program consisting of empty for loop without step")
@@ -73,7 +73,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
       Then("loop is executed properly and looping variable is set to end value")
-      assert(environment.getCurrentLine.contains(LineNumber(10)),"last line is FOR where actual condition is checked")
+      assert(environment.getCurrentLine.contains(LineNumber(20)))
       assert(environment.getValue(Variable("I")).contains(Result(4)))
     }
     Scenario("Run non-empty for loop with lines after for loop") {

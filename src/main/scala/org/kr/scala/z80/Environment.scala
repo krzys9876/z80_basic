@@ -18,11 +18,17 @@ class Environment(
   def setNextLine(num:LineNumber):Environment={
     new Environment(variables,forStack,lineStack,console,Some(num))
   }
-  def setForStack(name:String,line:LineNumber):Environment=
-    new Environment(variables,forStack.push(name,line),lineStack,console)
-  def clearForStack(name:String):Environment=
-    new Environment(variables,forStack.pop(name),lineStack,console)
-  def getFor(nameOrBeforeLine:Either[String,LineNumber]):Option[LineNumber]=forStack.lineFor(nameOrBeforeLine)
+  def setForStack(variable:Variable, line:LineNumber, forStatus: ForStatus=ForStatus.STARTED):Environment=
+    new Environment(variables,forStack.push(variable,ForState(variable,line,forStatus)),lineStack,console)
+  def clearForStack(variable:Variable):Environment=
+    new Environment(variables,forStack.pop(variable),lineStack,console)
+  def finishForStack(variable:Variable):Environment= {
+    val forState=getFor(variable).map(state=>ForState(variable,state.forLine,ForStatus.FINISHED))
+    forState.map(state=>new Environment(variables,forStack.push(variable,state),lineStack,console)).getOrElse(this)
+  }
+
+  def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
+  def getFor(beforeLine:LineNumber):Option[ForState]=forStack.lineFor(beforeLine)
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
   def run(program:Program):Environment= {
@@ -59,27 +65,38 @@ object Environment {
   def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,List())
 }
 
-class ForStack(private val map:Map[String,LineNumber]) {
+sealed trait ForStatus
+
+object ForStatus {
+  case object STARTED extends ForStatus
+  case object FINISHED extends ForStatus
+}
+
+case class ForState(variable:Variable, forLine:LineNumber, status:ForStatus)
+
+object ForState {
+  def apply(variable:Variable, forLine:LineNumber):ForState=new ForState(variable,forLine,ForStatus.STARTED)
+}
+
+class ForStack(private val map:Map[Variable,ForState]) {
   def isEmpty:Boolean=map.isEmpty
-  def push(name:String,line:LineNumber):ForStack=new ForStack(map ++ Map(name->line))
-  def pop(name:String):ForStack=new ForStack(map.removed(name))
+  def push(variable:Variable,state:ForState):ForStack=new ForStack(map ++ Map(variable->state))
+  def pop(variable:Variable):ForStack=new ForStack(map.removed(variable))
 
   // find 'for' statement for a given variable of any 'for' before given line number
-  def lineFor(nameOrLine:Either[String,LineNumber]):Option[LineNumber]= {
-    nameOrLine match {
-      case Left(nm)=>map.get(nm)
-      case Right(beforeNum)=>findLineBefore(beforeNum)
-    }
-  }
+  def lineFor(variable:Variable):Option[ForState]= map.get(variable)
+  def lineFor(beforeLineNum:LineNumber):Option[ForState]= findLineBefore(beforeLineNum)
 
-  private def findLineBefore(beforeNum: LineNumber):Option[LineNumber]={
-    map.values.toList.filter(_.num<beforeNum.num)
-      .foldLeft(Option.empty[LineNumber])(
-        (returnLine, lineNum) =>
+  private def findLineBefore(beforeNum: LineNumber):Option[ForState]={
+    map.values.toList.filter(_.forLine.num<beforeNum.num)
+      .foldLeft(Option.empty[ForState])(
+        (returnLine, state) =>
           returnLine match {
-            case None => Some(lineNum)
-            case Some(retLine) =>
-              if (lineNum.num > retLine.num) Some(lineNum) else Some(retLine)
+            // first pass
+            case None => Some(state)
+            // another pass
+            case Some(accumulatedState) =>
+              if (state.forLine.num > accumulatedState.forLine.num) Some(state) else Some(accumulatedState)
           }
         )
   }
