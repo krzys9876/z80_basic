@@ -15,7 +15,7 @@ class Environment(
     val newLineStack=lineStack.changeTopTo(num)
     new Environment(variables,forStack,newLineStack,console)
   }
-  def setNextLine(num:LineNumber):Environment={
+  def forceNextLine(num:LineNumber):Environment={
     new Environment(variables,forStack,lineStack,console,Some(num))
   }
   def setForStack(variable:Variable, line:LineNumber, forStatus: ForStatus=ForStatus.STARTED):Environment=
@@ -28,7 +28,11 @@ class Environment(
   }
 
   def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
-  def getFor(beforeLine:LineNumber):Option[ForState]=forStack.lineFor(beforeLine)
+  def getFor(variable:Option[Variable]):Option[ForState]=
+    variable
+      .flatMap(getFor)
+      .orElse(forStack.lineFor(getCurrentLine.get)) //TODO: check for empty
+
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
   def run(program:Program):Environment= {

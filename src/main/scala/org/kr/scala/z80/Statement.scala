@@ -39,7 +39,7 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
       case None => environment // TODO: Throw Error - FOR w/o NEXT
       case Some(nextLine)=>environment
         .finishForStack(assignment.variable)
-        .setNextLine(nextLine) // end of loop
+        .forceNextLine(nextLine) // end of loop
       }
     }
 
@@ -57,15 +57,12 @@ object FOR {
 // Empty list means that NEXT terminates the most recent FOR loop)
 // Multiple variables are treated as consecutive NEXT statements
 class NEXT(val variable: Option[Variable]) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
-    val forState=variable
-      .flatMap(environment.getFor).orElse(environment.getFor(environment.getCurrentLine.get))
-    forState match {
+  override def execute(program: Program, environment: Environment): Environment =
+    environment.getFor(variable) match {
       case Some(ForState(forVariable ,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
-      case Some(ForState(_, forLine, _)) => environment.setNextLine(forLine)
+      case Some(ForState(_, forLine, _)) => environment.forceNextLine(forLine)
       case None => environment // TODO: Throw error??? Next w/o for
     }
-  }
 
   override def list: String = f"NEXT"+variable.map(" "+_.name).getOrElse("")
 }
