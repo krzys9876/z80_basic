@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{ForStack, ForState, LineNumber, Variable}
+import org.kr.scala.z80.{ForStack, ForState, ForStatus, LineNumber, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -15,7 +15,7 @@ class ForStackTest extends AnyFeatureSpec with GivenWhenThen {
       Then("stack contains line 10 for variable I")
       assert(newStack.lineFor(Variable("I")).contains(ForState(Variable("I"),LineNumber(10))))
     }
-    Scenario("Push on non-empty stack") {
+    Scenario("Push to non-empty stack") {
       Given("stack is not empty")
       val stack=ForStack.empty
         .push(Variable("I"),ForState(Variable("I"),LineNumber(20)))
@@ -26,6 +26,20 @@ class ForStackTest extends AnyFeatureSpec with GivenWhenThen {
       val newStack=stack.push(Variable("K"),ForState(Variable("K"),LineNumber(100)))
       Then("stack contains line 100 for variable K")
       assert(newStack.lineFor(Variable("K")).contains(ForState(Variable("K"),LineNumber(100))))
+    }
+    Scenario("Change for loop status for non-empty stack") {
+      Given("stack is not empty")
+      val stack=ForStack.empty
+        .push(Variable("I"),ForState(Variable("I"),LineNumber(10)))
+        .push(Variable("J"),ForState(Variable("J"),LineNumber(20)))
+      assert(stack.lineFor(Variable("I")).contains(ForState(Variable("I"),LineNumber(10),ForStatus.STARTED)))
+      assert(stack.lineFor(Variable("J")).contains(ForState(Variable("J"),LineNumber(20),ForStatus.STARTED)))
+      When("existing variable with changed status is pushed")
+      val newStack=stack.push(Variable("I"),ForState(Variable("I"),LineNumber(10),ForStatus.FINISHED))
+      Then("stack contains changed status")
+      assert(newStack.lineFor(Variable("I")).contains(ForState(Variable("I"),LineNumber(10),ForStatus.FINISHED)))
+      And("other elements remain unchanged")
+      assert(stack.lineFor(Variable("J")).contains(ForState(Variable("J"),LineNumber(20),ForStatus.STARTED)))
     }
     Scenario("Pop from non-empty stack") {
       Given("stack has 2 variables (G,H)")
