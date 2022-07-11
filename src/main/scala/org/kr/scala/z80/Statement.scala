@@ -64,6 +64,9 @@ class NEXT(val variable: Option[Variable]) extends Statement {
       case None => environment // TODO: Throw error??? Next w/o for
     }
 
+  def isNextFor(checkVariable:Variable):Boolean =
+    variable.isEmpty || variable.contains(checkVariable)
+
   override def list: String = f"NEXT"+variable.map(" "+_.name).getOrElse("")
 }
 
