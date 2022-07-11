@@ -30,9 +30,10 @@ class Environment(
 
   def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
   def getFor(variable:Option[Variable]):Option[ForState]=
-    variable
-      .flatMap(getFor)
-      .orElse(getCurrentLine.flatMap(forStack.lineFor))
+    variable match {
+      case None=>getCurrentLine.flatMap(forStack.lineFor)
+      case Some(forVar)=>getFor(forVar)
+    }
 
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
@@ -78,85 +79,13 @@ class Environment(
     println(f"Exit code: $exitCode")
     this
   }
+
+  def showCurrentLine():Environment = {
+    println(f"Current line: ${lineStack.top.getOrElse(-1)}")
+    this
+  }
 }
 
 object Environment {
   def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,List())
-}
-
-sealed trait ExitCode
-
-object ExitCode {
-  case object NORMAL extends ExitCode {override def toString: String = "NORMAL"}
-  case object PROGRAM_END extends ExitCode {override def toString: String = "PROGRAM_END"}
-  case object FATAL_LINE_NOT_FOUND extends ExitCode {override def toString: String = "FATAL_LINE_NOT_FOUND"}
-  case object FATAL_FOR_MISSING_END_VALUE extends ExitCode {override def toString: String = "FATAL_FOR_MISSING_END_VALUE"}
-  case object FATAL_FOR_CANNOT_GET_VALUE extends ExitCode {override def toString: String = "FATAL_FOR_CANNOT_GET_VALUE"}
-  case object MISSING_NEXT extends ExitCode {override def toString: String = "MISSING_NEXT"}
-  case object MISSING_FOR extends ExitCode {override def toString: String = "MISSING_FOR"}
-}
-
-sealed trait ForStatus
-
-object ForStatus {
-  case object STARTED extends ForStatus
-  case object FINISHED extends ForStatus
-}
-
-case class ForState(variable:Variable, forLine:LineNumber, status:ForStatus)
-
-object ForState {
-  def apply(variable:Variable, forLine:LineNumber):ForState=new ForState(variable,forLine,ForStatus.STARTED)
-}
-
-class ForStack(private val map:Map[Variable,ForState]) {
-  def isEmpty:Boolean=map.isEmpty
-  def push(variable:Variable,state:ForState):ForStack=new ForStack(map ++ Map(variable->state))
-  def pop(variable:Variable):ForStack=new ForStack(map.removed(variable))
-
-  // find 'for' statement for a given variable of any 'for' before given line number
-  def lineFor(variable:Variable):Option[ForState]= map.get(variable)
-  def lineFor(beforeLineNum:LineNumber):Option[ForState]= findLineBefore(beforeLineNum)
-
-  private def findLineBefore(beforeNum: LineNumber):Option[ForState]={
-    map.values.toList.filter(_.forLine.num<beforeNum.num)
-      .foldLeft(Option.empty[ForState])(
-        (returnLine, state) =>
-          returnLine match {
-            // first pass
-            case None => Some(state)
-            // another pass
-            case Some(accumulatedState) =>
-              if (state.forLine.num > accumulatedState.forLine.num) Some(state) else Some(accumulatedState)
-          }
-        )
-  }
-}
-
-object ForStack {
-  def empty:ForStack=new ForStack(Map())
-}
-
-class LineStack(private val stack:List[LineNumber]) {
-  def top:Option[LineNumber]=
-    stack match {
-      case Nil=>None
-      case head::_=>Some(head)
-    }
-  def push(num:LineNumber):LineStack=new LineStack(List(num) ++ stack)
-  def pop:LineStack=
-    stack match {
-      case Nil=>this // TODO: or throw exception - TBD
-      case head::tail=>new LineStack(tail)
-    }
-  def changeTopTo(newTop:LineNumber):LineStack=
-    stack match {
-      case Nil=>new LineStack(List(newTop)) // initialize stack
-      case head::Nil=>new LineStack(List(newTop))
-      case head::tail=>new LineStack(List(newTop) ++ tail)
-    }
-}
-
-object LineStack {
-  def empty:LineStack=new LineStack(List())
 }

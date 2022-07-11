@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{Assignment, Environment, FOR, ForState, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, Variable}
+import org.kr.scala.z80.{Assignment, Environment, ExitCode, FOR, ForState, LET, Line, LineNumber, NEXT, PRINT, Program, REM, Result, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -169,6 +169,69 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("I")).contains(Result(2)))
       assert(environment.getValue(Variable("J")).contains(Result(3)))
       assert(environment.console==List("Q\n","Q\n","W\n","W\n","W\n","E\n"))
+    }
+    Scenario("Run for loop w/o next with start value < end value") {
+      Given("a program consisting of for loop w/o next")
+      val program=new Program(Vector(
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(2))),
+        new Line(LineNumber(20),PRINT(Result("A")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("loop is executed only once")
+      And("missing next is ignored")
+      assert(environment.getCurrentLine.contains(LineNumber(20)))
+      assert(environment.getValue(Variable("I")).contains(Result(1)))
+      assert(environment.console==List("A\n"))
+    }
+    Scenario("Run for loop w/o next with start value = end value") {
+      Given("a program consisting of for loop w/o next")
+      val program=new Program(Vector(
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(3)),Result(3))),
+        new Line(LineNumber(20),PRINT(Result("A")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("loop is executed only once")
+      And("missing next is ignored")
+      assert(environment.getCurrentLine.contains(LineNumber(20)))
+      assert(environment.getValue(Variable("I")).contains(Result(3)))
+      assert(environment.console==List("A\n"))
+    }
+    Scenario("Run for loop w/o next with start value > end value") {
+      Given("a program consisting of for loop w/o next")
+      val program=new Program(Vector(
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(2)),Result(1))),
+        new Line(LineNumber(20),PRINT(Result("A")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("the loop is not executed")
+      And("program ends with error - missing next statement")
+      assert(environment.getCurrentLine.contains(LineNumber(10)))
+      assert(environment.getValue(Variable("I")).isEmpty)
+      assert(environment.exitCode==ExitCode.MISSING_NEXT)
+      assert(environment.console.isEmpty)
+    }
+    Scenario("Run for loop with incorrect next") {
+      Given("a program consisting of for loop with incorrect next (different variable)")
+      val program=new Program(Vector(
+        new Line(LineNumber(10),FOR(Assignment(Variable("I"),Result(1)),Result(2))),
+        new Line(LineNumber(20),PRINT(Result("A"))),
+        new Line(LineNumber(30),NEXT(Variable("J")))
+      ))
+      When("program is executed")
+      val initialEnvironment=Environment.empty
+      val environment=initialEnvironment.run(program)
+      Then("the loop is executed once")
+      And("program ends with error - missing for statement")
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+      assert(environment.getValue(Variable("I")).contains(Result(1)))
+      assert(environment.exitCode==ExitCode.MISSING_FOR)
+      assert(environment.console==List("A\n"))
     }
   }
 }

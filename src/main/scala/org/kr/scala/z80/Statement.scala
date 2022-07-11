@@ -7,10 +7,14 @@ trait Statement extends Listable {
 
 class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[Expression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    (environment.getFor(assignment.variable),endValue.resultNum) match {
-      case (_,None) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_END_VALUE)
-      case (None,Some(_)) => initFor(environment)
-      case (Some(_),Some(endVal)) =>
+    val state=environment.getFor(assignment.variable)
+    val startVal=assignment.expression.resultNum
+    val endVal=endValue.resultNum
+    (state,startVal,endVal) match {
+      case (_,_,None) | (_,None,_) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
+      case (None,Some(start),Some(end)) if start>end => finishFor(program,environment)
+      case (None,Some(start),Some(end)) => initFor(environment)
+      case (Some(_),Some(_),Some(endVal)) =>
         calculateNextValue(environment) match {
           case Some(nextValue) if nextValue > endVal => finishFor(program, environment)
           case Some(nextValue) => continueFor(environment,nextValue)
