@@ -3,9 +3,9 @@ package org.kr.scala.z80
 class Program(val lines: Vector[Line]) {
   def show(): Unit = lines.foreach(line => println(line.list))
 
-  def firstLineNumber: Option[LineNumber] =
-    if (lines.isEmpty) None
-    else Some(lines(0).number)
+  def firstLineNumber: Either[ExitCode,LineNumber] =
+    if (lines.isEmpty) Left(ExitCode.PROGRAM_END)
+    else Right(lines(0).number)
 
   def lineAfter(line: Line): Option[Line] = {
     val index = lines.indexOf(line)
@@ -16,11 +16,17 @@ class Program(val lines: Vector[Line]) {
     }
   }
 
-  def lineNumAfter(line: Line): Option[LineNumber] =
-    lineAfter(line).map(_.number)
-      .orElse(Some(LineNumber(Int.MaxValue, endOfProgram = true)))
+  def lineNumAfter(line: Line): Either[ExitCode,LineNumber] = {
+    lineAfter(line) match {
+      case Some(lineNum)=>Right(lineNum.number)
+      case None=>Left(ExitCode.PROGRAM_END)
+    }
+  }
 
-  def line(lineNum: LineNumber): Option[Line] = lines.find(_.number == lineNum)
+  def lineByNum(lineNum: LineNumber): Either[ExitCode,Line] =
+    lines
+      .find(_.number == lineNum).map(Right(_))
+      .getOrElse(Left(ExitCode.FATAL_LINE_NOT_FOUND))
 
   def getNextFor(variable: Variable, from: LineNumber): Option[LineNumber] = {
     val forLineIndex = lines

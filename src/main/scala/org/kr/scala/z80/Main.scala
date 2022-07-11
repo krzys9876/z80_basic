@@ -14,6 +14,8 @@ object Main extends App {
   Environment.empty
     .run(program)
     .showConsole()
+    .showExitCode()
+
 
   println("END")
 }

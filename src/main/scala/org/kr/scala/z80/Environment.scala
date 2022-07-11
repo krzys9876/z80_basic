@@ -7,6 +7,7 @@ class Environment(
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
                    val console:List[String],
+                   val exitCode:ExitCode=ExitCode.NORMAL,
                    val nextLineNum:Option[LineNumber]=None) {
   def setVariable(variable: Variable,value:Any):Environment=
     new Environment(variables ++ Map(variable->value),forStack,lineStack,console)
@@ -15,9 +16,8 @@ class Environment(
     val newLineStack=lineStack.changeTopTo(num)
     new Environment(variables,forStack,newLineStack,console)
   }
-  def forceNextLine(num:LineNumber):Environment={
-    new Environment(variables,forStack,lineStack,console,Some(num))
-  }
+  def forceNextLine(num:LineNumber):Environment=
+    new Environment(variables,forStack,lineStack,console,exitCode,Some(num))
   def setForStack(variable:Variable, line:LineNumber, forStatus: ForStatus=ForStatus.STARTED):Environment=
     new Environment(variables,forStack.push(variable,ForState(variable,line,forStatus)),lineStack,console)
   def clearForStack(variable:Variable):Environment=
@@ -31,7 +31,7 @@ class Environment(
   def getFor(variable:Option[Variable]):Option[ForState]=
     variable
       .flatMap(getFor)
-      .orElse(forStack.lineFor(getCurrentLine.get)) //TODO: check for empty
+      .orElse(getCurrentLine.flatMap(forStack.lineFor))
 
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
@@ -39,22 +39,29 @@ class Environment(
     runLine(program.firstLineNumber,program)
   }
 
+  def setExitCode(code:ExitCode):Environment = new Environment(variables,forStack,lineStack,console,code,None)
+
   @tailrec
-  final def runLine(lineNum:Option[LineNumber], program: Program):Environment= {
-    lineNum match {
-      case None | Some(LineNumber(_,true)) =>this // end of program
-      case Some(lineNm) =>
-        // init environment with current line
-        val initialEnv = setLine(lineNm)
-        // find line by number (it should be there)
-        val line=program.line(lineNm)
-        line match {
-          case None=>this // TODO: Throw error???
-          case Some(lineToExecute)=>
-            val afterEnv=lineToExecute.execute(program,initialEnv)
-            // determine next line - either next line in program of other number saved by the executed line
-            val nextLineNum=afterEnv.nextLineNum.orElse(program.lineNumAfter(lineToExecute))
-            afterEnv.runLine(nextLineNum,program)
+  final def runLine(action:Either[ExitCode,LineNumber], program: Program):Environment= {
+    action match {
+      case Left(code) =>setExitCode(code) // end of program
+      case Right(lineNum) =>
+        val (afterEnv,nextAction)=runOneLine(lineNum,program)
+        afterEnv.runLine(nextAction,program)
+    }
+  }
+
+  private def runOneLine(lineNum:LineNumber,program: Program):(Environment,Either[ExitCode,LineNumber]) = {
+    program.lineByNum(lineNum) match {
+      case Left(code)=>(this,Left(code))
+      case Right(lineToExecute)=>
+        // line execution creates new version of environment
+        lineToExecute.execute(program,this.setLine(lineNum)) match {
+          case env if env.exitCode!=ExitCode.NORMAL => (env,Left(env.exitCode))
+          case env =>
+            // determine next line - either next line in program (or end of program code) or other number saved by the executed line
+            val nextAction=env.nextLineNum.map(Right(_)).getOrElse(program.lineNumAfter(lineToExecute))
+            (env,nextAction)
         }
     }
   }
@@ -62,11 +69,26 @@ class Environment(
   def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
   def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text+"\n"))
 
-  def showConsole():Unit = println(console.mkString(""))
+  def showConsole():Environment = {
+    println(console.mkString(""))
+    this
+  }
+  def showExitCode():Environment = {
+    println(f"Exit code: $exitCode")
+    this
+  }
 }
 
 object Environment {
   def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,List())
+}
+
+sealed trait ExitCode
+
+object ExitCode {
+  case object NORMAL extends ExitCode {override def toString: String = "NORMAL"}
+  case object PROGRAM_END extends ExitCode {override def toString: String = "PROGRAM_END"}
+  case object FATAL_LINE_NOT_FOUND extends ExitCode {override def toString: String = "FATAL_LINE_NOT_FOUND"}
 }
 
 sealed trait ForStatus
