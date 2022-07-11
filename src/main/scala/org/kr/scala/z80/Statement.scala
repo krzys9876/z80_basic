@@ -7,22 +7,26 @@ trait Statement extends Listable {
 
 class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[Expression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    environment.getFor(assignment.variable) match {
-      case None => initFor(environment)
-      case Some(_) =>
-        val nextValue=calculateNextValue(environment)
-        if (nextValue > endValue.resultNum.get) // TODO: check for empty
-          finishFor(program, environment)
-        else
-          continueFor(environment,nextValue)
+    (environment.getFor(assignment.variable),endValue.resultNum) match {
+      case (_,None) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_END_VALUE)
+      case (None,Some(_)) => initFor(environment)
+      case (Some(_),Some(endVal)) =>
+        calculateNextValue(environment) match {
+          case Some(nextValue) if nextValue > endVal => finishFor(program, environment)
+          case Some(nextValue) => continueFor(environment,nextValue)
+          case None=>environment.setExitCode(ExitCode.FATAL_FOR_CANNOT_GET_VALUE)
+        }
     }
   }
 
-  private def calculateNextValue(environment: Environment):BigDecimal = {
-    val nextValueResult = environment.getValue(assignment.variable).get.asInstanceOf[Result] // TODO: check for error if missing variable (not likely)
-    val stepNum = step.flatMap(_.resultNum).getOrElse(BigDecimal(1))
-    nextValueResult.resultNum.get + stepNum
+  private def calculateNextValue(environment: Environment):Option[BigDecimal] = {
+    environment.getValueAs[Result](assignment.variable) match {
+      case None=>None
+      case Some(value)=> value.resultNum.map(_ + stepNum)
+    }
   }
+
+  lazy val stepNum: BigDecimal =step.flatMap(_.resultNum).getOrElse(BigDecimal(1))
 
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
     environment
@@ -34,12 +38,11 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
         .setForStack(assignment.variable, environment.getCurrentLine.get)
 
   private def finishFor(program: Program,environment: Environment):Environment = {
-    val nextStmtLine = program.getNextFor(assignment.variable, environment.getCurrentLine.get)
-    nextStmtLine match {
-      case None => environment // TODO: Throw Error - FOR w/o NEXT
+    program.getNextFor(assignment.variable, environment.getCurrentLine.get) match {
       case Some(nextLine)=>environment
         .finishForStack(assignment.variable)
         .forceNextLine(nextLine) // end of loop
+      case None => environment.setExitCode(ExitCode.MISSING_NEXT)
       }
     }
 
@@ -61,7 +64,7 @@ class NEXT(val variable: Option[Variable]) extends Statement {
     environment.getFor(variable) match {
       case Some(ForState(forVariable ,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
       case Some(ForState(_, forLine, _)) => environment.forceNextLine(forLine)
-      case None => environment // TODO: Throw error??? Next w/o for
+      case None => environment.setExitCode(ExitCode.MISSING_FOR)
     }
 
   def isNextFor(checkVariable:Variable):Boolean =

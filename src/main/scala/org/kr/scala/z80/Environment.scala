@@ -12,6 +12,7 @@ class Environment(
   def setVariable(variable: Variable,value:Any):Environment=
     new Environment(variables ++ Map(variable->value),forStack,lineStack,console)
   def getValue(variable: Variable):Option[Any]=variables.get(variable)
+  def getValueAs[T](variable: Variable):Option[T]=variables.get(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment={
     val newLineStack=lineStack.changeTopTo(num)
     new Environment(variables,forStack,newLineStack,console)
@@ -89,6 +90,10 @@ object ExitCode {
   case object NORMAL extends ExitCode {override def toString: String = "NORMAL"}
   case object PROGRAM_END extends ExitCode {override def toString: String = "PROGRAM_END"}
   case object FATAL_LINE_NOT_FOUND extends ExitCode {override def toString: String = "FATAL_LINE_NOT_FOUND"}
+  case object FATAL_FOR_MISSING_END_VALUE extends ExitCode {override def toString: String = "FATAL_FOR_MISSING_END_VALUE"}
+  case object FATAL_FOR_CANNOT_GET_VALUE extends ExitCode {override def toString: String = "FATAL_FOR_CANNOT_GET_VALUE"}
+  case object MISSING_NEXT extends ExitCode {override def toString: String = "MISSING_NEXT"}
+  case object MISSING_FOR extends ExitCode {override def toString: String = "MISSING_FOR"}
 }
 
 sealed trait ForStatus
@@ -141,7 +146,7 @@ class LineStack(private val stack:List[LineNumber]) {
   def push(num:LineNumber):LineStack=new LineStack(List(num) ++ stack)
   def pop:LineStack=
     stack match {
-      case Nil=>this // or throw exception - TBD
+      case Nil=>this // TODO: or throw exception - TBD
       case head::tail=>new LineStack(tail)
     }
   def changeTopTo(newTop:LineNumber):LineStack=
