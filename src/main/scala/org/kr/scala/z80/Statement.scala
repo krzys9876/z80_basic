@@ -13,7 +13,7 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
     (state,startVal,endVal) match {
       case (_,_,None) | (_,None,_) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
       case (None,Some(start),Some(end)) if start>end => finishFor(program,environment)
-      case (None,Some(start),Some(end)) => initFor(environment)
+      case (None,Some(_),Some(_)) => initFor(environment)
       case (Some(_),Some(_),Some(endVal)) =>
         calculateNextValue(environment) match {
           case Some(nextValue) if nextValue > endVal => finishFor(program, environment)
@@ -85,7 +85,12 @@ object NEXT {
 class PRINT(val expression: Expression) extends Statement {
   // print text to console
   override def execute(program: Program, environment: Environment): Environment = {
-    val output = expression.result.toString
+    //TODO: decode missing value properly (return exit code if variable cannot be decoded)
+    val output=expression.valueNum(environment) match {
+      case Some(num) => num.toString()
+      case None => expression.result.toString
+    }
+
     environment.consolePrintln(output)
   }
 

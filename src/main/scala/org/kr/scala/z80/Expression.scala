@@ -12,25 +12,31 @@ abstract class Expression extends Listable {
       case _ => "TYPE NOT SUPPORTED"
     }
 
-  val result: Any
-  val resultNum: Option[BigDecimal]
-  val resultText: Option[String]
+  def result: Any
+  def resultNum: Option[BigDecimal]
+  def resultText: Option[String]
+
+  def valueNum(env:Environment): Option[BigDecimal]
+
 }
 
 case class Result(value: Any) extends Expression {
-  override val result: Any = value
-  override val resultNum: Option[BigDecimal] =
+  override def result: Any = value
+  override def resultNum: Option[BigDecimal] =
     value match {
       case n: BigDecimal => Some(n)
       case _ => None
     }
-  override val resultText: Option[String] =
+  override def resultText: Option[String] =
     value match {
       case s: String => Some(s)
       case _ => None
     }
 
+  def valueNum(env:Environment): Option[BigDecimal] = resultNum
+
   override def list: String = resultText.getOrElse(resultNum.map(_.toString).getOrElse("EMPTY"))
+
 }
 
 object Result {
@@ -45,4 +51,22 @@ object Result {
     }
     new Result(valueTyped)
   }
+}
+
+case class NumericResult(value: Any) extends Expression {
+  override def result: Any = value
+  override def resultNum: Option[BigDecimal] =
+    value match {
+      case n: BigDecimal => Some(n)
+      case _ => None
+    }
+  override def resultText: Option[String] = None
+
+  def valueNum(env:Environment): Option[BigDecimal] = resultNum
+
+  override def list: String = resultText.getOrElse(resultNum.map(_.toString).getOrElse("EMPTY"))
+}
+
+object NumericResult {
+  def apply(value: BigDecimal): NumericResult = new NumericResult(value)
 }
