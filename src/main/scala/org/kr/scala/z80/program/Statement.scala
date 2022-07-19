@@ -1,4 +1,7 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.program
+
+import org.kr.scala.z80.environment.{Environment, ExitCode, ForState, ForStatus}
+import org.kr.scala.z80.expression.{Expression, NumericExpression, TextExpression}
 
 trait Statement extends Listable {
   override def list: String

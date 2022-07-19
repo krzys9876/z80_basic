@@ -1,4 +1,6 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.environment
+
+import org.kr.scala.z80.program.LineNumber
 
 class LineStack(private val stack:List[LineNumber]) {
   def top:Option[LineNumber]=

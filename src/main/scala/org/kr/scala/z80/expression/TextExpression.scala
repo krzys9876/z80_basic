@@ -1,4 +1,6 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.expression
+
+import org.kr.scala.z80.environment.Environment
 
 abstract class TextExpression extends Expression {
   def evaluate(env:Environment): Either[String, String]
@@ -9,10 +11,6 @@ abstract class TextExpression extends Expression {
 case class StaticTextExpr(text:String) extends TextExpression {
   override def evaluate(env:Environment): Either[String, String]=Right(text)
   override def toString: String = f"TEXT:$text"
-
-  override def result:Any=text
-  override def resultNum: Option[BigDecimal]=None
-  override def resultText: Option[String]=Some(text)
 
   override def valueText(env:Environment): String = text
 

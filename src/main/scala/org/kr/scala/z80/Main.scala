@@ -1,5 +1,9 @@
 package org.kr.scala.z80
 
+import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.expression.{ExprNumber, ExprVariable, StaticTextExpr}
+import org.kr.scala.z80.program.{FOR, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, Variable}
+
 object Main extends App {
   println("START")
 

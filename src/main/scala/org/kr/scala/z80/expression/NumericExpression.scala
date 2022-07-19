@@ -1,4 +1,7 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.expression
+
+import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.program.Variable
 
 import java.text.DecimalFormat
 
@@ -18,10 +21,6 @@ case class ExprNumber(numValue: Double) extends NumericExpression {
   override def evaluate(env:Environment): Either[String, BigDecimal] = Right(numValue)
   override def toString: String = f"NUM:$numValue"
 
-  override def result:Any=numValue
-  override def resultNum: Option[BigDecimal]=Some(numValue)
-  override def resultText: Option[String]=Some(if(numValue.isWhole) intFormat.format(numValue) else numValue.toString)
-
   override def valueNum(env:Environment): Option[BigDecimal] = Some(numValue)
 
   override def list: String = if(numValue.isWhole) intFormat.format(numValue) else numValue.toString
@@ -37,10 +36,6 @@ case class ExprVariable(variable: Variable) extends NumericExpression {
       case None => Left(f"missing value for variable: ${variable.name}")
       case Some(result) => Right(result)
     }
-
-  override def result:Any=0
-  override def resultNum: Option[BigDecimal]=None
-  override def resultText: Option[String]=None
 
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
 

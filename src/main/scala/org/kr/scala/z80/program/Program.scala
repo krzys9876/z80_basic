@@ -1,4 +1,6 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.program
+
+import org.kr.scala.z80.environment.ExitCode
 
 class Program(val lines: Vector[Line]) {
   def show(): Unit = lines.foreach(line => println(line.list))

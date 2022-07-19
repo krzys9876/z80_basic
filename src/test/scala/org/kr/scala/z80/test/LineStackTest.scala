@@ -1,6 +1,7 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{LineNumber, LineStack}
+import org.kr.scala.z80.environment.LineStack
+import org.kr.scala.z80.program.LineNumber
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 

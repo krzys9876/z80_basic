@@ -1,4 +1,7 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.program
+
+import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.expression.{Expression, NumericExpression}
 
 trait Listable {
   // 'list' is not a container but rather a verb 'to list', i.e. generate textual representation of an element of the program

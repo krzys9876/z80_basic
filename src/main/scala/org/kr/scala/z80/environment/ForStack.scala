@@ -1,4 +1,6 @@
-package org.kr.scala.z80
+package org.kr.scala.z80.environment
+
+import org.kr.scala.z80.program.{LineNumber, Variable}
 
 case class ForState(variable:Variable,
                     start:BigDecimal,end:BigDecimal,step:BigDecimal,

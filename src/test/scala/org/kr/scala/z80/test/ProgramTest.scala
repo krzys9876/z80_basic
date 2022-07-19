@@ -1,6 +1,8 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{Assignment, Environment, ExitCode, ExprNumber, FOR, ForState, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, StaticTextExpr, Variable}
+import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
+import org.kr.scala.z80.expression.{ExprNumber, StaticTextExpr}
+import org.kr.scala.z80.program.{Assignment, FOR, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
