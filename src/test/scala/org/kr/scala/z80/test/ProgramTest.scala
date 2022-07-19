@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.{Assignment, Environment, ExitCode, ExprNumber, FOR, ForState, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Result, Variable}
+import org.kr.scala.z80.{Assignment, Environment, ExitCode, ExprNumber, FOR, ForState, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, StaticTextExpr, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -22,8 +22,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run only print lines") {
       Given("a program consisting only print lines")
       val program=new Program(Vector(
-        new Line(LineNumber(10),PRINT(Result("aaaa"))),
-        new Line(LineNumber(20),PRINT(Result("bbbb")))
+        new Line(LineNumber(10),PRINT(StaticTextExpr("aaaa"))),
+        new Line(LineNumber(20),PRINT(StaticTextExpr("bbbb")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -35,20 +35,20 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run assignment to a variable") {
       Given("a program consisting of assignment lines")
       val program=new Program(Vector(
-        new Line(LineNumber(30),LET(Assignment(Variable("A"),Result(123L)))),
-        new Line(LineNumber(35),LET(Assignment(Variable("B"),Result(234.123)))),
-        new Line(LineNumber(40),LET(Assignment(Variable("C"),Result("qwerty")))),
-        new Line(LineNumber(45),LET(Assignment(Variable("D"),Result(false))))
+        new Line(LineNumber(30),LET(Assignment(Variable("A"),ExprNumber(123L)))),
+        new Line(LineNumber(35),LET(Assignment(Variable("B"),ExprNumber(234.123)))),
+        new Line(LineNumber(40),LET(Assignment(Variable("C"),StaticTextExpr("qwerty")))),
+        new Line(LineNumber(45),LET(Assignment(Variable("D"),ExprNumber(false))))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
       val environment=initialEnvironment.run(program)
       Then("environment contains variables with expected values")
       assert(environment.getCurrentLine.contains(LineNumber(45)))
-      assert(environment.getValue(Variable("A")).contains(Result(123L)))
-      assert(environment.getValue(Variable("B")).contains(Result(234.123)))
-      assert(environment.getValue(Variable("C")).contains(Result("qwerty")))
-      assert(environment.getValue(Variable("D")).contains(Result(0)))
+      assert(environment.getValue(Variable("A")).contains(123.0))
+      assert(environment.getValue(Variable("B")).contains(234.123))
+      assert(environment.getValue(Variable("C")).contains("qwerty"))
+      assert(environment.getValue(Variable("D")).contains(0))
     }
     Scenario("Initialize for loop") {
       Given("a program consisting of only for statement")
@@ -61,7 +61,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("environment contains looping variable with initial value")
       assert(environment.getCurrentLine.contains(LineNumber(10)))
       assert(environment.getValue(Variable("I")).contains(1))
-      assert(environment.getFor(Variable("I")).contains(ForState(Variable("I"),LineNumber(10))))
+      assert(environment.getFor(Variable("I")).contains(ForState(Variable("I"),1,3,1,LineNumber(10))))
     }
     Scenario("Run empty for loop") {
       Given("a program consisting of empty for loop without step")
@@ -80,9 +80,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop without step")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(3))),
-        new Line(LineNumber(20),PRINT(Result("A"))),
+        new Line(LineNumber(20),PRINT(StaticTextExpr("A"))),
         new Line(LineNumber(30),NEXT(Variable("I"))),
-        new Line(LineNumber(40),PRINT(Result("B")))
+        new Line(LineNumber(40),PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -96,9 +96,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop with step")
       val program=new Program(Vector(
         new Line(LineNumber(5),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(7),Some(ExprNumber(2)))),
-        new Line(LineNumber(10),PRINT(Result("A"))),
+        new Line(LineNumber(10),PRINT(StaticTextExpr("A"))),
         new Line(LineNumber(15),NEXT(Variable("I"))),
-        new Line(LineNumber(20),PRINT(Result("B")))
+        new Line(LineNumber(20),PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -112,9 +112,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop with step")
       val program=new Program(Vector(
         new Line(LineNumber(5),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(8),Some(ExprNumber(2)))),
-        new Line(LineNumber(10),PRINT(Result("A"))),
+        new Line(LineNumber(10),PRINT(StaticTextExpr("A"))),
         new Line(LineNumber(15),NEXT(Variable("I"))),
-        new Line(LineNumber(20),PRINT(Result("B")))
+        new Line(LineNumber(20),PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -129,12 +129,12 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of nested for loops")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(3))),
-        new Line(LineNumber(20),PRINT(Result("X"))),
+        new Line(LineNumber(20),PRINT(StaticTextExpr("X"))),
         new Line(LineNumber(30),FOR(NumericAssignment(Variable("J"),ExprNumber(1)),ExprNumber(2))),
-        new Line(LineNumber(40),PRINT(Result("Y"))),
+        new Line(LineNumber(40),PRINT(StaticTextExpr("Y"))),
         new Line(LineNumber(50),NEXT(Variable("J"))),
         new Line(LineNumber(60),NEXT(Variable("I"))),
-        new Line(LineNumber(70),PRINT(Result("Z")))
+        new Line(LineNumber(70),PRINT(StaticTextExpr("Z")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -153,12 +153,12 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loops")
       val program=new Program(Vector(
         new Line(LineNumber(5),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(2))),
-        new Line(LineNumber(10),PRINT(Result("Q"))),
+        new Line(LineNumber(10),PRINT(StaticTextExpr("Q"))),
         new Line(LineNumber(15),NEXT()),
         new Line(LineNumber(20),FOR(NumericAssignment(Variable("J"),ExprNumber(1)),ExprNumber(3))),
-        new Line(LineNumber(25),PRINT(Result("W"))),
+        new Line(LineNumber(25),PRINT(StaticTextExpr("W"))),
         new Line(LineNumber(30),NEXT()),
-        new Line(LineNumber(35),PRINT(Result("E")))
+        new Line(LineNumber(35),PRINT(StaticTextExpr("E")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -174,7 +174,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop w/o next")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(2))),
-        new Line(LineNumber(20),PRINT(Result("A")))
+        new Line(LineNumber(20),PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -189,7 +189,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop w/o next")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(3)),ExprNumber(3))),
-        new Line(LineNumber(20),PRINT(Result("A")))
+        new Line(LineNumber(20),PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -204,7 +204,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop w/o next")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(2)),ExprNumber(1))),
-        new Line(LineNumber(20),PRINT(Result("A")))
+        new Line(LineNumber(20),PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
       val initialEnvironment=Environment.empty
@@ -220,7 +220,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Given("a program consisting of for loop with incorrect next (different variable)")
       val program=new Program(Vector(
         new Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(2))),
-        new Line(LineNumber(20),PRINT(Result("A"))),
+        new Line(LineNumber(20),PRINT(StaticTextExpr("A"))),
         new Line(LineNumber(30),NEXT(Variable("J")))
       ))
       When("program is executed")

@@ -1,9 +1,16 @@
 package org.kr.scala.z80
 
-case class ForState(variable:Variable, forLine:LineNumber, status:ForStatus)
+case class ForState(variable:Variable,
+                    start:BigDecimal,end:BigDecimal,step:BigDecimal,
+                    forLine:LineNumber, status:ForStatus)
 
 object ForState {
-  def apply(variable:Variable, forLine:LineNumber):ForState=new ForState(variable,forLine,ForStatus.STARTED)
+  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,step:BigDecimal,forLine:LineNumber):ForState=
+    new ForState(variable,start,end,step,forLine,ForStatus.STARTED)
+  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,forLine:LineNumber):ForState=
+    new ForState(variable,start,end,1,forLine,ForStatus.STARTED)
+  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,forLine:LineNumber,status:ForStatus):ForState=
+    new ForState(variable,start,end,1,forLine,status)
 }
 
 class ForStack(private val map:Map[Variable,ForState]) {

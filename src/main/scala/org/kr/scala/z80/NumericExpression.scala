@@ -23,6 +23,12 @@ case class ExprNumber(numValue: Double) extends NumericExpression {
   override def resultText: Option[String]=Some(if(numValue.isWhole) intFormat.format(numValue) else numValue.toString)
 
   override def valueNum(env:Environment): Option[BigDecimal] = Some(numValue)
+
+  override def list: String = if(numValue.isWhole) intFormat.format(numValue) else numValue.toString
+}
+
+object ExprNumber {
+  def apply(bool:Boolean):ExprNumber = new ExprNumber(if(bool) -1 else 0)
 }
 
 case class ExprVariable(variable: Variable) extends NumericExpression {
@@ -37,5 +43,7 @@ case class ExprVariable(variable: Variable) extends NumericExpression {
   override def resultText: Option[String]=None
 
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
+
+  override def list: String = variable.name
 }
 

@@ -7,41 +7,40 @@ trait Statement extends Listable {
 
 class FOR(val assignment: NumericAssignment, val endValue: NumericExpression, val step:Option[NumericExpression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    val state=environment.getFor(assignment.variable)
-    val startVal=assignment.expression.valueNum(environment) // TODO: change from Result to ExprNumber (or other expr)
-    val endVal=endValue.valueNum(environment)
-    (state,startVal,endVal) match {
-      case (_,_,None) | (_,None,_) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
-      case (None,Some(start),Some(end)) if start>end => finishFor(program,environment)
-      case (None,Some(_),Some(_)) => initFor(environment)
-      case (Some(_),Some(_),Some(endVal)) =>
-        calculateNextValue(environment) match {
-          case Some(nextValue) if nextValue > endVal => finishFor(program, environment)
+    environment.getFor(assignment.variable) match {
+      case None =>
+        val startVal=assignment.expression.valueNum(environment)
+        val endVal=endValue.valueNum(environment)
+        val stepVal=step.flatMap(_.valueNum(environment)).getOrElse(BigDecimal(1))
+        (startVal,endVal) match {
+          case (None,_) | (_,None) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
+          case (Some(startV),Some(endV)) if startV>endV=>finishFor(program,environment)
+          case (Some(startV),Some(endV))=>initFor(environment,startV,endV,stepVal)
+        }
+      case Some(state) =>
+        calculateNextValue(environment,state.step) match {
+          case Some(nextValue) if nextValue > state.end => finishFor(program, environment)
           case Some(nextValue) => continueFor(environment,nextValue)
           case None=>environment.setExitCode(ExitCode.FATAL_FOR_CANNOT_GET_VALUE)
         }
     }
   }
 
-  private def calculateNextValue(environment: Environment):Option[BigDecimal] = {
+  private def calculateNextValue(environment: Environment,stepVal:BigDecimal):Option[BigDecimal] = {
     environment.getValueAs[BigDecimal](assignment.variable) match {
       case None=>None
-      case Some(value)=> Some(value + stepNum)
+      case Some(value)=> Some(value + stepVal)
     }
   }
-
-  //TODO: read step from ForStack
-  lazy val stepNum: BigDecimal =step.flatMap(_.resultNum).getOrElse(BigDecimal(1))
 
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
     environment
       .setVariable(assignment.variable, nextValue)
 
-  //TODO: add step to ForStack
-  private def initFor(environment: Environment):Environment =
+  private def initFor(environment: Environment,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
       environment
         .setVariable(assignment.variable, assignment.expression.valueNum(environment).get)
-        .setForStack(assignment.variable, environment.getCurrentLine.get)
+        .setForStack(assignment.variable, environment.getCurrentLine.get,start,end,step)
 
   private def finishFor(program: Program,environment: Environment):Environment = {
     program.getNextFor(assignment.variable, environment.getCurrentLine.get) match {
@@ -68,8 +67,8 @@ object FOR {
 class NEXT(val variable: Option[Variable]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment =
     environment.getFor(variable) match {
-      case Some(ForState(forVariable ,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
-      case Some(ForState(_, forLine, _)) => environment.forceNextLine(forLine)
+      case Some(ForState(forVariable,_,_,_,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
+      case Some(ForState(_,_,_,_, forLine, _)) => environment.forceNextLine(forLine)
       case None => environment.setExitCode(ExitCode.MISSING_FOR)
     }
 
@@ -110,9 +109,12 @@ object REM {
 }
 
 class LET(val assignment: Assignment) extends Statement {
-  // print text to console
+  // assign a value to a variable
   override def execute(program: Program, environment: Environment): Environment = {
-    environment.setVariable(assignment.variable, assignment.expression)
+    assignment.expression match {
+      case num : NumericExpression => environment.setVariable(assignment.variable, num.valueNum(environment).get)
+      case text : TextExpression => environment.setVariable(assignment.variable, text.valueText(environment))
+    }
   }
 
   override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"

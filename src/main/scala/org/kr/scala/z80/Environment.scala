@@ -19,12 +19,13 @@ class Environment(
   }
   def forceNextLine(num:LineNumber):Environment=
     new Environment(variables,forStack,lineStack,console,exitCode,Some(num))
-  def setForStack(variable:Variable, line:LineNumber, forStatus: ForStatus=ForStatus.STARTED):Environment=
-    new Environment(variables,forStack.push(variable,ForState(variable,line,forStatus)),lineStack,console)
+  def setForStack(variable:Variable, line:LineNumber,
+                  start:BigDecimal,end:BigDecimal,step:BigDecimal, forStatus: ForStatus=ForStatus.STARTED):Environment=
+    new Environment(variables,forStack.push(variable,ForState(variable,start,end,step,line,forStatus)),lineStack,console)
   def clearForStack(variable:Variable):Environment=
     new Environment(variables,forStack.pop(variable),lineStack,console)
   def finishForStack(variable:Variable):Environment= {
-    val forState=getFor(variable).map(state=>ForState(variable,state.forLine,ForStatus.FINISHED))
+    val forState=getFor(variable).map(state=>ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
     forState.map(state=>new Environment(variables,forStack.push(variable,state),lineStack,console)).getOrElse(this)
   }
 
