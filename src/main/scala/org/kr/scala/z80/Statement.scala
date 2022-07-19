@@ -5,11 +5,11 @@ trait Statement extends Listable {
   def execute(program: Program, environment: Environment): Environment
 }
 
-class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[Expression]) extends Statement {
+class FOR(val assignment: NumericAssignment, val endValue: NumericExpression, val step:Option[NumericExpression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
     val state=environment.getFor(assignment.variable)
-    val startVal=assignment.expression.resultNum
-    val endVal=endValue.resultNum
+    val startVal=assignment.expression.valueNum(environment) // TODO: change from Result to ExprNumber (or other expr)
+    val endVal=endValue.valueNum(environment)
     (state,startVal,endVal) match {
       case (_,_,None) | (_,None,_) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
       case (None,Some(start),Some(end)) if start>end => finishFor(program,environment)
@@ -24,21 +24,23 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
   }
 
   private def calculateNextValue(environment: Environment):Option[BigDecimal] = {
-    environment.getValueAs[Result](assignment.variable) match {
+    environment.getValueAs[BigDecimal](assignment.variable) match {
       case None=>None
-      case Some(value)=> value.resultNum.map(_ + stepNum)
+      case Some(value)=> Some(value + stepNum)
     }
   }
 
+  //TODO: read step from ForStack
   lazy val stepNum: BigDecimal =step.flatMap(_.resultNum).getOrElse(BigDecimal(1))
 
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
     environment
-      .setVariable(assignment.variable, Result(nextValue))
+      .setVariable(assignment.variable, nextValue)
 
+  //TODO: add step to ForStack
   private def initFor(environment: Environment):Environment =
       environment
-        .setVariable(assignment.variable, assignment.expression)
+        .setVariable(assignment.variable, assignment.expression.valueNum(environment).get)
         .setForStack(assignment.variable, environment.getCurrentLine.get)
 
   private def finishFor(program: Program,environment: Environment):Environment = {
@@ -56,7 +58,7 @@ class FOR(val assignment: Assignment, val endValue: Expression, val step:Option[
 }
 
 object FOR {
-  def apply(assignment: Assignment, expression: Expression, step:Option[Expression]=None): FOR =
+  def apply(assignment: NumericAssignment, expression: NumericExpression, step:Option[NumericExpression]=None): FOR =
     new FOR(assignment,expression,step)
 }
 
@@ -86,15 +88,10 @@ class PRINT(val expression: Expression) extends Statement {
   // print text to console
   override def execute(program: Program, environment: Environment): Environment = {
     //TODO: decode missing value properly (return exit code if variable cannot be decoded)
-    val output=expression.valueNum(environment) match {
-      case Some(num) => num.toString()
-      case None => expression.result.toString
-    }
-
-    environment.consolePrintln(output)
+    environment.consolePrintln(expression.valueText(environment))
   }
 
-  override def list: String = f"PRINT \"${expression.list}\""
+  override def list: String = f"PRINT ${expression.list}"
 }
 
 object PRINT {

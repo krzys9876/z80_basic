@@ -29,6 +29,14 @@ object Assignment {
   def apply(variable: Variable, expression: Expression): Assignment = new Assignment(variable, expression)
 }
 
+class NumericAssignment(val variable: Variable, val expression: NumericExpression) extends Listable {
+  override def list: String = f"${variable.list}=${expression.list}"
+}
+
+object NumericAssignment {
+  def apply(variable: Variable, expression: NumericExpression): NumericAssignment = new NumericAssignment(variable, expression)
+}
+
 case class Variable(name: String) extends Listable {
   override def list: String = name
 }

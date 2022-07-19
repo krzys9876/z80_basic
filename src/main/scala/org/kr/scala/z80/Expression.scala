@@ -17,7 +17,7 @@ abstract class Expression extends Listable {
   def resultText: Option[String]
 
   def valueNum(env:Environment): Option[BigDecimal]
-
+  def valueText(env: Environment):String = resultText.getOrElse("")
 }
 
 case class Result(value: Any) extends Expression {

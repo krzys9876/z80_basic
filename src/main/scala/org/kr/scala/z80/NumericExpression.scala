@@ -7,6 +7,11 @@ abstract class NumericExpression extends Expression {
 
   val intFormat=new DecimalFormat("#")
 
+  override def valueText(env: Environment):String=
+    valueNum(env) match {
+      case None => ""
+      case Some(number) => if(number.isWhole) intFormat.format(number) else number.toString
+    }
 }
 
 case class ExprNumber(numValue: Double) extends NumericExpression {
@@ -17,20 +22,20 @@ case class ExprNumber(numValue: Double) extends NumericExpression {
   override def resultNum: Option[BigDecimal]=Some(numValue)
   override def resultText: Option[String]=Some(if(numValue.isWhole) intFormat.format(numValue) else numValue.toString)
 
-  def valueNum(env:Environment): Option[BigDecimal] = Some(numValue)
+  override def valueNum(env:Environment): Option[BigDecimal] = Some(numValue)
 }
 
 case class ExprVariable(variable: Variable) extends NumericExpression {
   override def evaluate(env:Environment): Either[String, BigDecimal] =
-    env.getValueAs[Result](variable) match {
+    env.getValueAs[BigDecimal](variable) match {
       case None => Left(f"missing value for variable: ${variable.name}")
-      case Some(result) => result.resultNum.map(Right(_)).getOrElse(Left("error evaluating variable"))
+      case Some(result) => Right(result)
     }
 
   override def result:Any=0
   override def resultNum: Option[BigDecimal]=None
   override def resultText: Option[String]=None
 
-  def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
+  override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
 }
 
