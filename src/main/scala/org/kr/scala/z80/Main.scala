@@ -1,7 +1,7 @@
 package org.kr.scala.z80
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.expression.{ExprNumber, ExprVariable, StaticTextExpr}
+import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.program.{FOR, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, Variable}
 
 object Main extends App {
@@ -14,6 +14,7 @@ object Main extends App {
     new Line(LineNumber(40),FOR(NumericAssignment(Variable("J"),ExprNumber(1)),ExprNumber(10),Some(ExprNumber(1.5)))),
     new Line(LineNumber(50),PRINT(ExprVariable(Variable("J")))),
     new Line(LineNumber(55),PRINT(StaticTextExpr("abc"))),
+    new Line(LineNumber(56),PRINT(ExprOperation(ExprVariable(Variable("J")),ExprNumber(10.01),"*"))),
     new Line(LineNumber(60),NEXT(Variable("J")))
   ))
   program.show()
