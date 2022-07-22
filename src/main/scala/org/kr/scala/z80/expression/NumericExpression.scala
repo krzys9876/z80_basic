@@ -79,5 +79,5 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
 
   override def list: String =
-    f"(${factor1.toString} $operator ${factor2.toString})"
+    f"(${factor1.list} $operator ${factor2.list})"
 }

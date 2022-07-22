@@ -1,7 +1,7 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.expression.{ExprNumber, ExprVariable}
+import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, ExprVariable}
 import org.kr.scala.z80.program.Variable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
@@ -29,6 +29,29 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
       assert(eVals==List(0.123,-987654321,321.123))
+    }
+    Scenario("evaluate expression (numbers only)") {
+      Given("expressions representing binary operations (e.g. a+b etc.)")
+      val e=List(
+        ExprOperation(ExprNumber(1),ExprNumber(2),"+"),
+        ExprOperation(ExprNumber(8),ExprNumber(10),"-"),
+        ExprOperation(ExprNumber(5),ExprNumber(8),"*"),
+        ExprOperation(ExprNumber(10),ExprNumber(4),"/"),
+        ExprOperation(ExprNumber(2),ExprNumber(8),"^"),
+        ExprOperation(ExprNumber(3),ExprNumber(3),"="),
+        ExprOperation(ExprNumber(4),ExprNumber(4),"<>"),
+        ExprOperation(ExprNumber(5),ExprNumber(4),">"),
+        ExprOperation(ExprNumber(8),ExprNumber(2),"<"),
+        ExprOperation(ExprNumber(1),ExprNumber(-1),">="),
+        ExprOperation(ExprNumber(2),ExprNumber(1),"<="),
+        ExprOperation(ExprNumber(0x4AAA),ExprNumber(0x1555),"OR"),
+        ExprOperation(ExprNumber(0x6CC6),ExprNumber(0x4888),"AND")
+      )
+      val env=Environment.empty
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env).get)
+      Then("return correct numbers")
+      assert(eVals==List(3.0,-2.0,40.0,2.5,256.0,-1.0,0.0,-1.0,0.0,-1.0,0.0,0x5FFF,0x4880))
     }
   }
 }
