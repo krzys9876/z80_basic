@@ -119,6 +119,68 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       assert(eVal.isEmpty)
       assert(eErr.isLeft)
     }
+    Scenario("evaluate nested arithmetic expression (numbers only)") {
+      Given("expressions representing an actual arithmetic expression: ((a+b)*(c-d))/(e^f-g)")
+      val e=ExprOperation(
+        ExprOperation(
+          ExprOperation(
+            ExprNumber(-1),
+            ExprNumber(3),
+            "+"),
+          ExprOperation(
+            ExprNumber(-5),
+            ExprNumber(-8),
+            "-"),
+          "*"
+        ),
+        ExprOperation(
+          ExprOperation(
+            ExprNumber(2),
+            ExprNumber(3),
+            "^"
+          ),
+          ExprNumber(4),
+          "-"),
+        "/")
+      val env=Environment.empty
+      When("evaluated")
+      val eVal=e.valueNum(env).get
+      Then("return correct numbers")
+      assert(eVal==1.5)
+    }
+    Scenario("evaluate nested arithmetic expression (with variables)") {
+      Given("expressions representing an actual arithmetic expression: ((a+b)*(c-d))/(e^f-g)")
+      val e=ExprOperation(
+        ExprOperation(
+          ExprOperation(
+            ExprNumber(-1),
+            ExprVariable(Variable("V3")),
+            "+"),
+          ExprOperation(
+            ExprNumber(-5),
+            ExprNumber(-8),
+            "-"),
+          "*"
+        ),
+        ExprOperation(
+          ExprOperation(
+            ExprVariable(Variable("V2")),
+            ExprVariable(Variable("V3")),
+            "^"
+          ),
+          ExprVariable(Variable("V4")),
+          "-"),
+        "/")
+      And("variables exists in environment")
+      val env=Environment.empty
+        .setVariable(Variable("V2"),BigDecimal(2))
+        .setVariable(Variable("V3"),BigDecimal(3))
+        .setVariable(Variable("V4"),BigDecimal(4))
+      When("evaluated")
+      val eVal=e.valueNum(env).get
+      Then("return correct numbers")
+      assert(eVal==1.5)
+    }
   }
 }
 
