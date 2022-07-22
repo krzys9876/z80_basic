@@ -4,6 +4,7 @@ import org.kr.scala.z80.environment.Environment
 import org.kr.scala.z80.program.Variable
 
 import java.text.DecimalFormat
+import scala.util.Try
 
 abstract class NumericExpression extends Expression {
   def evaluate(env:Environment): Either[String, BigDecimal]
@@ -50,7 +51,7 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
           case "+" => Right(v1 + v2)
           case "-" => Right(v1 - v2)
           case "*" => Right(v1 * v2)
-          case "/" => Right(v1 / v2)
+          case "/" => Try(Right(v1 / v2)).getOrElse(Left("division error"))
           case "^" => Right(scala.math.pow(v1.toDouble, v2.toDouble))
           case "=" => Right(boolToNum(v1==v2))
           case "<>" => Right(boolToNum(v1!=v2))

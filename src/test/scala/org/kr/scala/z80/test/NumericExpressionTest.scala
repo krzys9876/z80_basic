@@ -17,7 +17,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       Then("return correct numbers")
       assert(eVals == List(0.0, -1, 1234.5678, 1234567890.1234567890))
     }
-    Scenario("evaluate variable") {
+    Scenario("evaluate existing variable") {
       Given("expressions representing variables")
       val e = List(ExprVariable(Variable("A")), ExprVariable(Variable("ASDF")), ExprVariable(Variable("QWERTY")))
       And("variables exist in environment")
@@ -29,6 +29,19 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val eVals = e.map(_.valueNum(env).get)
       Then("return correct numbers")
       assert(eVals == List(0.123, -987654321, 321.123))
+    }
+    Scenario("evaluate non-existing variable") {
+      Given("expressions representing variables")
+      val e = ExprVariable(Variable("B"))
+      And("variable does not exist in environment")
+      val env = Environment.empty
+        .setVariable(Variable("A"), BigDecimal(1.0))
+      When("evaluated")
+      val eVal = e.valueNum(env)
+      val eErr = e.evaluate(env)
+      Then("returns error message and empty value")
+      assert(eVal.isEmpty)
+      assert(eErr.isLeft)
     }
   }
   Feature("evaluate complex expressions") {
@@ -54,6 +67,57 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
       assert(eVals==List(3.0,-2.0,40.0,2.5,256.0,-1.0,0.0,-1.0,0.0,-1.0,0.0,0x5FFF,0x4880))
+    }
+    Scenario("evaluate incorrect binary operations (numbers only)") {
+      Given("expressions representing binary operations (e.g. a+b etc.)")
+      val e=List(
+        ExprOperation(ExprNumber(10),ExprNumber(0),"/"),
+        ExprOperation(ExprNumber(0x8000),ExprNumber(0x0001),"OR"),
+        ExprOperation(ExprNumber(0x1111),ExprNumber(0x8080),"AND")
+      )
+      val env=Environment.empty
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env))
+      val eErrs=e.map(_.evaluate(env))
+      Then("return correct numbers")
+      assert(eVals.forall(_.isEmpty))
+      assert(eErrs.forall(_.isLeft))
+    }
+    Scenario("evaluate binary operations (numbers and variables)") {
+      Given("expressions representing binary operations (e.g. a+b etc.)")
+      val e=List(
+        ExprOperation(ExprNumber(1),ExprVariable(Variable("A")),"+"),
+        ExprOperation(ExprNumber(126),ExprVariable(Variable("A")),"-"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(2),"*"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(2),"/"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(2),"^"),
+        ExprOperation(ExprVariable(Variable("A")),ExprVariable(Variable("A")),"="),
+        ExprOperation(ExprVariable(Variable("A")),ExprVariable(Variable("A")),"<>"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(100),">"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(100),"<"),
+        ExprOperation(ExprNumber(100),ExprVariable(Variable("A")),">="),
+        ExprOperation(ExprNumber(100),ExprVariable(Variable("A")),"<="),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(0x80),"OR"),
+        ExprOperation(ExprVariable(Variable("A")),ExprNumber(0x22),"AND")
+      )
+      val env=Environment.empty
+        .setVariable(Variable("A"),BigDecimal(127))
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env).get)
+      Then("return correct numbers")
+      assert(eVals==List(128,-1,254,63.5,16129,-1.0,0.0,-1.0,0.0,0.0,-1.0,0xFF,0x22))
+    }
+    Scenario("evaluate binary operation for non-existing variable)") {
+      Given("expression representing binary operation with a non-existing variable")
+      val e=ExprOperation(ExprNumber(1),ExprVariable(Variable("X")),"+")
+      val env=Environment.empty
+        .setVariable(Variable("Y"),BigDecimal(1))
+      When("evaluated")
+      val eVal=e.valueNum(env)
+      val eErr=e.evaluate(env)
+      Then("return correct numbers")
+      assert(eVal.isEmpty)
+      assert(eErr.isLeft)
     }
   }
 }
