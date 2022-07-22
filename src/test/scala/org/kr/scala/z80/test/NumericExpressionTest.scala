@@ -10,27 +10,29 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("evaluate simple numeric expression") {
     Scenario("evaluate static number") {
       Given("expressions representing static numbers")
-      val e=List(ExprNumber(0.0),ExprNumber(-1),ExprNumber(1234.5678),ExprNumber(1234567890.1234567890))
+      val e = List(ExprNumber(0.0), ExprNumber(-1), ExprNumber(1234.5678), ExprNumber(1234567890.1234567890))
       When("evaluated")
-      val env=Environment.empty
-      val eVals=e.map(_.valueNum(env).get)
+      val env = Environment.empty
+      val eVals = e.map(_.valueNum(env).get)
       Then("return correct numbers")
-      assert(eVals==List(0.0,-1,1234.5678,1234567890.1234567890))
+      assert(eVals == List(0.0, -1, 1234.5678, 1234567890.1234567890))
     }
     Scenario("evaluate variable") {
       Given("expressions representing variables")
-      val e=List(ExprVariable(Variable("A")),ExprVariable(Variable("ASDF")),ExprVariable(Variable("QWERTY")))
+      val e = List(ExprVariable(Variable("A")), ExprVariable(Variable("ASDF")), ExprVariable(Variable("QWERTY")))
       And("variables exist in environment")
-      val env=Environment.empty
-        .setVariable(Variable("A"),BigDecimal(0.123))
-        .setVariable(Variable("ASDF"),BigDecimal(-987654321))
-        .setVariable(Variable("QWERTY"),BigDecimal(321.123))
+      val env = Environment.empty
+        .setVariable(Variable("A"), BigDecimal(0.123))
+        .setVariable(Variable("ASDF"), BigDecimal(-987654321))
+        .setVariable(Variable("QWERTY"), BigDecimal(321.123))
       When("evaluated")
-      val eVals=e.map(_.valueNum(env).get)
+      val eVals = e.map(_.valueNum(env).get)
       Then("return correct numbers")
-      assert(eVals==List(0.123,-987654321,321.123))
+      assert(eVals == List(0.123, -987654321, 321.123))
     }
-    Scenario("evaluate expression (numbers only)") {
+  }
+  Feature("evaluate complex expressions") {
+    Scenario("evaluate binary operations (numbers only)") {
       Given("expressions representing binary operations (e.g. a+b etc.)")
       val e=List(
         ExprOperation(ExprNumber(1),ExprNumber(2),"+"),
