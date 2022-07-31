@@ -75,6 +75,8 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
       Right(func(v1.toShort,v2.toShort))
     }
 
+  // -1 (not 1) represents True according to MS Basic documentation
+  // it is a binary number consisting of only '1'
   private def boolToNum(bool:Boolean):Int=if(bool) -1 else 0
 
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
