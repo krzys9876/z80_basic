@@ -2,15 +2,12 @@ package org.kr.scala.z80.expression
 
 import org.kr.scala.z80.environment.Environment
 import org.kr.scala.z80.program.Variable
-
 import java.text.DecimalFormat
 import scala.util.Try
 
 abstract class NumericExpression extends Expression {
   def evaluate(env:Environment): Either[String, BigDecimal]
-
   val intFormat=new DecimalFormat("#")
-
   override def valueText(env: Environment):String=
     valueNum(env) match {
       case None => ""
@@ -21,9 +18,7 @@ abstract class NumericExpression extends Expression {
 case class ExprNumber(numValue: Double) extends NumericExpression {
   override def evaluate(env:Environment): Either[String, BigDecimal] = Right(numValue)
   override def toString: String = f"NUM:$numValue"
-
   override def valueNum(env:Environment): Option[BigDecimal] = Some(numValue)
-
   override def list: String = if(numValue.isWhole) intFormat.format(numValue) else numValue.toString
 }
 
@@ -37,9 +32,7 @@ case class ExprVariable(variable: Variable) extends NumericExpression {
       case None => Left(f"missing value for variable: ${variable.name}")
       case Some(result) => Right(result)
     }
-
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
-
   override def list: String = variable.name
 }
 
@@ -65,6 +58,7 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
         }
       case (Right(_), Left(msg)) => Left(msg)
       case (Left(msg), Right(_)) => Left(msg)
+      case (Left(msg1), Left(msg2)) => Left(f"$msg1, $msg2")
     }
 
   private def bitwiseOper(v1:BigDecimal,v2:BigDecimal,func:(Short,Short)=>BigDecimal):Either[String,BigDecimal] =
@@ -78,9 +72,7 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
   // -1 (not 1) represents True according to MS Basic documentation
   // it is a binary number consisting of only '1'
   private def boolToNum(bool:Boolean):Int=if(bool) -1 else 0
-
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
-
   override def list: String =
     f"(${factor1.list} $operator ${factor2.list})"
 }
