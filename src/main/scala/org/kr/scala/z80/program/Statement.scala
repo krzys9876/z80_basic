@@ -8,7 +8,7 @@ trait Statement extends Listable {
   def execute(program: Program, environment: Environment): Environment
 }
 
-class FOR(val assignment: NumericAssignment, val endValue: NumericExpression, val step:Option[NumericExpression]) extends Statement {
+case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:Option[NumericExpression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
     environment.getFor(assignment.variable) match {
       case None =>
@@ -67,7 +67,7 @@ object FOR {
 //TODO: replace variable with optional list of variables
 // Empty list means that NEXT terminates the most recent FOR loop)
 // Multiple variables are treated as consecutive NEXT statements
-class NEXT(val variable: Option[Variable]) extends Statement {
+case class NEXT(variable: Option[Variable]=None) extends Statement {
   override def execute(program: Program, environment: Environment): Environment =
     environment.getFor(variable) match {
       case Some(ForState(forVariable,_,_,_,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
@@ -83,10 +83,9 @@ class NEXT(val variable: Option[Variable]) extends Statement {
 
 object NEXT {
   def apply(variable: Variable): NEXT = new NEXT(Some(variable))
-  def apply(): NEXT = new NEXT(None)
 }
 
-class PRINT(val expression: Expression) extends Statement {
+case class PRINT(expression: Expression) extends Statement {
   // print text to console
   override def execute(program: Program, environment: Environment): Environment = {
     //TODO: decode missing value properly (return exit code if variable cannot be decoded)
@@ -96,22 +95,14 @@ class PRINT(val expression: Expression) extends Statement {
   override def list: String = f"PRINT ${expression.list}"
 }
 
-object PRINT {
-  def apply(expression: Expression): PRINT = new PRINT(expression)
-}
-
-class REM(val comment: String) extends Statement {
+case class REM(comment: String) extends Statement {
   // ignore the line
   override def execute(program: Program, environment: Environment): Environment = environment
 
   override def list: String = f"REM $comment"
 }
 
-object REM {
-  def apply(comment: String): REM = new REM(comment)
-}
-
-class LET(val assignment: Assignment) extends Statement {
+case class LET(assignment: Assignment) extends Statement {
   // assign a value to a variable
   override def execute(program: Program, environment: Environment): Environment = {
     assignment.expression match {
@@ -122,8 +113,3 @@ class LET(val assignment: Assignment) extends Statement {
 
   override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"
 }
-
-object LET {
-  def apply(assignment: Assignment): LET = new LET(assignment)
-}
-

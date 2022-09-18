@@ -12,7 +12,7 @@ case class LineNumber(num: Int, endOfProgram: Boolean = false) {
   override def toString: String = num.toString
 }
 
-class Line(val number: LineNumber, val statement: Statement) extends Listable {
+case class Line(number: LineNumber, statement: Statement) extends Listable {
   override def list: String = f"$number ${statement.list}"
 
   def execute(program: Program, env: Environment): Environment = {
