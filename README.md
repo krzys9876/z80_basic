@@ -14,13 +14,19 @@ We'll see what's going to come up from this :)
 
 <img src="https://img.shields.io/badge/PRINT-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/FOR loop-Done-green.svg"/></a>
+<img src="https://img.shields.io/badge/FOR / NEXT-Done-green.svg"/></a>
 
 <img src="https://img.shields.io/badge/IF-Done-green.svg"/></a>
 
 <img src="https://img.shields.io/badge/GOTO-Done-green.svg"/></a>
 
-More to come :)
+<img src="https://img.shields.io/badge/DIM-Planned-lightgray.svg"/></a>
+
+<img src="https://img.shields.io/badge/GOSUB / RETURN-Planned-lightgray.svg"/></a>
+
+<img src="https://img.shields.io/badge/DATA / READ-Planned-lightgray.svg"/></a>
+
+This should be enough to run tic-tac-toe (10x10) game, which was a test program for Z80 simulator. 
 
 ### Parsing
 
@@ -28,6 +34,8 @@ More to come :)
 
 <img src="https://img.shields.io/badge/Arithmetic expressions-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/Text expressions-In progress-blue.svg"/></a>
+<img src="https://img.shields.io/badge/Complex printing-Planned-lightgray.svg"/></a>
+
+<img src="https://img.shields.io/badge/Text expressions-Planned-lightgray.svg"/></a>
 
 
