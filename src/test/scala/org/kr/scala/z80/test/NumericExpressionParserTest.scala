@@ -30,10 +30,12 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("A$").isLeft)
       assert(ExpressionTester("BCD$").isLeft)
     }
-    Scenario("parse high priority functions (sin, cos, abs, negation)") {
+    Scenario("parse functions (sin, cos, abs, negation etc.)") {
       assert(ExpressionTester("SIN(3.14)").contains(ExprFunction.sin(3.14)))
       assert(ExpressionTester("COS(-3.14)").contains(ExprFunction.cos(ExprFunction.neg(3.14))))
       assert(ExpressionTester("ABS(-1.23)").contains(ExprFunction.abs(ExprFunction.neg(1.23))))
+      assert(ExpressionTester("SQR(4)").contains(ExprFunction.sqr(4)))
+      assert(ExpressionTester("INT(3.4)").contains(ExprFunction.int(3.4)))
     }
     Scenario("parse power operator") {
       assert(ExpressionTester("1.2 ^ 3.4").contains(

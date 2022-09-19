@@ -2,7 +2,6 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.Environment
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable}
-import org.kr.scala.z80.program.Variable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -130,12 +129,15 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprFunction.abs(-1.23),
         ExprFunction.abs(2.34),
         ExprFunction.not(0x55), // bitwise not
+        ExprFunction.int(1.23),
+        ExprFunction.int(-1.23),
+        ExprFunction.sqr(4.0)
       )
       val env=Environment.empty
       When("evaluated")
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
-      assert(eVals==List(-1.0,0.0,1.0,1.23,2.34,0xAA-256))
+      assert(eVals==List(-1.0,0.0,1.0,1.23,2.34,0xAA-256,1.0,-2.0,2.0))
     }
     Scenario("evaluate functions (variables)") {
       Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
@@ -160,9 +162,10 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       assert(eVals==List(10.0,0.0,1.0,3.2,4.3,0x55-256))
     }
     Scenario("evaluate incorrect functions (numbers only)") {
-      Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
+      Given("invalid function calls (e.g. square negative number)")
       val e=List(
         ExprFunction.not(0xEEEE),
+        ExprFunction.sqr(-1.0),
       )
       val env=Environment.empty
       When("evaluated")

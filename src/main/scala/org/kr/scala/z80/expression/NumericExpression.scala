@@ -109,6 +109,8 @@ case class ExprFunction(factor:NumericExpression, function:String) extends Numer
           case "SIN" => Right(scala.math.sin(v.toDouble))
           case "COS" => Right(scala.math.cos(v.toDouble))
           case "NOT" => bitwiseOper(v.toDouble, ~_)
+          case "INT" => Right(scala.math.floor(v.toDouble))
+          case "SQR" => Try(Right(BigDecimal(scala.math.sqrt(v.toDouble)))).getOrElse(Left("squaring error"))
           case "-" => Right(-v)
           case fun => Left(f"function: $fun is not supported")
         }
@@ -131,4 +133,6 @@ object ExprFunction {
   def cos(factor:NumericExpression):ExprFunction=ExprFunction(factor,"COS")
   def not(factor:NumericExpression):ExprFunction=ExprFunction(factor,"NOT")
   def neg(factor:NumericExpression):ExprFunction=ExprFunction(factor,"-")
+  def int(factor:NumericExpression):ExprFunction=ExprFunction(factor,"INT")
+  def sqr(factor:NumericExpression):ExprFunction=ExprFunction(factor,"SQR")
 }

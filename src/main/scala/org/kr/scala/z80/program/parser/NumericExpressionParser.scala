@@ -45,7 +45,7 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
   private def variableExpr:PN=numVariable ^^ (v => ExprVariable(v))
   private def exprParen: PN = "(" ~> numericExpression <~ ")"
-  private def func: PN = ("ABS" | "SIN" | "COS") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
+  private def func: PN = ("ABS" | "SIN" | "COS" | "INT" | "SQR") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
   private def neg: PN = "-" ~ factor1 ^^ { case _ ~ f => ExprFunction(f,"-") }
   private def power:Parser[String] = "^"
   private def multiplication:Parser[String] = "*" | "/"
