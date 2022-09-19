@@ -10,21 +10,20 @@ class Program(val srcLines: Vector[Line]) {
     if (lines.isEmpty) Left(ExitCode.PROGRAM_END)
     else Right(lines(0).number)
 
-  def lineAfter(line: Line): Option[Line] = {
+  def lineAfter(line: Line): Either[ExitCode,Line] = {
     val index = lines.indexOf(line)
     index match {
-      case i if i < 0 => None // TODO: Throw exception???
-      case i if i == lines.length - 1 => None // end of program
-      case i => Some(lines(i + 1))
+      case i if i < 0 => Left(ExitCode.INVALID_LINE)
+      case i if i == lines.length - 1 => Left(ExitCode.PROGRAM_END) // end of program
+      case i => Right(lines(i + 1))
     }
   }
 
-  def lineNumAfter(line: Line): Either[ExitCode,LineNumber] = {
+  def lineNumAfter(line: Line): Either[ExitCode,LineNumber] =
     lineAfter(line) match {
-      case Some(lineNum)=>Right(lineNum.number)
-      case None=>Left(ExitCode.PROGRAM_END)
+      case Right(line)=>Right(line.number)
+      case Left(code)=>Left(code)
     }
-  }
 
   def lineByNum(lineNum: LineNumber): Either[ExitCode,Line] =
     lines

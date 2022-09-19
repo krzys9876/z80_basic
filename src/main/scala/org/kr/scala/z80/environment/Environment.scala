@@ -10,6 +10,7 @@ case class Environment(
                    private val lineStack:LineStack,
                    console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
+                      //TODO: combine nextLineNum and skiptoNextLine in one class
                    nextLineNum:Option[LineNumber]=None,
                    skiptoNextLine:Boolean=false) {
   def resetNextLine:Environment=copy(nextLineNum=None,skiptoNextLine=false)
@@ -61,22 +62,11 @@ case class Environment(
     }
   }
 
-  //TODO: refactor and simplify
   private def findLineToRun(lineNum: LineNumber, program: Program):Either[ExitCode,Line] = {
-    program.lineByNum(lineNum) match {
-      case Left(code)=>Left(code)
-      case Right(line)=>
-        if(skiptoNextLine) {
-          program.lineNumAfter(line) match {
-            case Left(code)=>Left(code)
-            case Right(nextLine)=>
-              program.lineByNum(nextLine) match {
-                case Left(code)=>Left(code)
-                case Right(line)=>Right(line)
-              }
-          }
-        }
-        else Right(line)
+    (program.lineByNum(lineNum),skiptoNextLine) match {
+      case (Left(code),_) =>Left(code)
+      case (Right(line),false)=>Right(line)
+      case (Right(line),true)=>program.lineAfter(line)
     }
   }
 
