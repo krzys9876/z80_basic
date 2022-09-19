@@ -76,6 +76,22 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
   override def list: String = f"(${factor1.list} $operator ${factor2.list})"
 }
 
+object ExprOperation {
+  def plus(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"+")
+  def minus(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"-")
+  def mul(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"*")
+  def div(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"/")
+  def pow(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"^")
+  def eq(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"=")
+  def ne(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"<>")
+  def gt(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,">")
+  def lt(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"<")
+  def ge(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,">=")
+  def le(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"<=")
+  def or(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"OR")
+  def and(factor1:NumericExpression,factor2:NumericExpression):ExprOperation=ExprOperation(factor1,factor2,"AND")
+}
+
 case class ExprFunction(factor:NumericExpression, function:String) extends NumericExpression {
   override def evaluate(env: Environment): Either[String, BigDecimal] =
     factor.evaluate(env) match {

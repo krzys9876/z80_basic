@@ -2,7 +2,7 @@ package org.kr.scala.z80.program.parser
 
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
 
-trait ExpressionParser extends CommonParser with VariableParser {
+trait NumericExpressionParser extends CommonParser with VariableParser {
   // Output type
   type N=NumericExpression
   // Parser of the output type
@@ -20,7 +20,7 @@ trait ExpressionParser extends CommonParser with VariableParser {
   type PNN=Parser[N=>N]
 
   // result
-  def expr:PN = factor8
+  def numericExpression:PN = factor8
 
   // FactorX / OperationX - numbers indicate order of precedence of operations
   // Precedence is defined in MS Basic documentation (page 5.4)
@@ -44,7 +44,7 @@ trait ExpressionParser extends CommonParser with VariableParser {
   //Building blocks for hierarchy of operations
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
   private def variableExpr:PN=numVariable ^^ (v => ExprVariable(v))
-  private def exprParen: PN = "(" ~> expr <~ ")"
+  private def exprParen: PN = "(" ~> numericExpression <~ ")"
   private def func: PN = ("ABS" | "SIN" | "COS") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
   private def neg: PN = "-" ~ factor1 ^^ { case _ ~ f => ExprFunction(f,"-") }
   private def power:Parser[String] = "^"

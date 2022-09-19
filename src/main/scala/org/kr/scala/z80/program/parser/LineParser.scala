@@ -55,8 +55,8 @@ trait StaticTextExprParser extends CommonParser {
   def staticTextExpr:Parser[StaticTextExpr] = (anyTextQuoted | emptyString) ^^ {t => StaticTextExpr(t)}
 }
 
-trait PrintParser extends CommonParser with StaticTextExprParser {
-  def print:Parser[PRINT] = "PRINT" ~ staticTextExpr ^^ {case _ ~ t => PRINT(t)}
+trait PrintParser extends CommonParser with StaticTextExprParser with NumericExpressionParser {
+  def print:Parser[PRINT] = "PRINT" ~ (numericExpression | staticTextExpr) ^^ {case _ ~ t => PRINT(t)}
 }
 
 trait VariableParser extends CommonParser {

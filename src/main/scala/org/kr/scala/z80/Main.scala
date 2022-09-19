@@ -10,12 +10,12 @@ object Main extends App {
 
   val program=new Program(Vector(
     Line(LineNumber(10),FOR(NumericAssignment(Variable("I"),ExprNumber(1)),ExprNumber(5),Some(ExprNumber(2)))),
-    Line(LineNumber(20),PRINT(ExprNumber(123.456))),
+    LineParser.force("20 PRINT 123.456"),
     LineParser.force("30 NEXT"),
     Line(LineNumber(40),FOR(NumericAssignment(Variable("J"),ExprNumber(1)),ExprNumber(10),Some(ExprNumber(1.5)))),
-    Line(LineNumber(50),PRINT(ExprVariable(Variable("J")))),
+    LineParser.force("50 PRINT J"),
     LineParser.force("55 PRINT \"abc\""),
-    Line(LineNumber(56),PRINT(ExprOperation(ExprVariable(Variable("J")),ExprNumber(10.01),"*"))),
+    LineParser.force("56 PRINT J*10.01"),
     LineParser.force("60 NEXT J")
   ))
   program.show()
