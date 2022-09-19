@@ -2,7 +2,6 @@ package org.kr.scala.z80.program
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState, ForStatus}
 import org.kr.scala.z80.expression.{Expression, NumericExpression, TextExpression}
-
 import scala.math.BigDecimal
 
 trait Statement extends Listable {
@@ -30,14 +29,12 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
         }
     }
   }
-
   private def calculateNextValue(environment: Environment,stepVal:BigDecimal):Option[BigDecimal] = {
     environment.getValueAs[BigDecimal](assignment.variable) match {
       case None=>None
       case Some(value)=> Some(value + stepVal)
     }
   }
-
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
     environment
       .setVariable(assignment.variable, nextValue)
@@ -55,7 +52,6 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
       case None => environment.setExitCode(ExitCode.MISSING_NEXT)
       }
     }
-
   override def list: String = f"FOR ${assignment.variable.name} = " +
     f"${assignment.expression.list} TO ${endValue.list}" +
     step.map(s=>f" STEP ${s.list}").getOrElse("")
@@ -76,10 +72,8 @@ case class NEXT(variable: Option[Variable]=None) extends Statement {
       case Some(ForState(_,_,_,_, forLine, _)) => environment.forceNextLine(forLine)
       case None => environment.setExitCode(ExitCode.MISSING_FOR)
     }
-
   def isNextFor(checkVariable:Variable):Boolean =
     variable.isEmpty || variable.contains(checkVariable)
-
   override def list: String = f"NEXT"+variable.map(" "+_.name).getOrElse("")
 }
 
@@ -93,7 +87,6 @@ case class PRINT(expression: Expression) extends Statement {
     //TODO: decode missing value properly (return exit code if variable cannot be decoded)
     environment.consolePrintln(expression.valueText(environment))
   }
-
   override def list: String = f"PRINT ${expression.list}"
 }
 
@@ -112,7 +105,6 @@ case class LET(assignment: AssignmentBase) extends Statement {
       case text : TextExpression => environment.setVariable(assignment.variable, text.valueText(environment))
     }
   }
-
   override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"
 }
 
@@ -123,7 +115,6 @@ case class GOTO(toLine:LineNumber) extends Statement {
       case Left(code) => environment.setExitCode(code)
     }
   }
-
   override def list: String = f"GOTO ${toLine.num}"
 }
 
@@ -135,6 +126,15 @@ case class IF(condition:NumericExpression,statement: Statement) extends Statemen
       case None => environment.setExitCode(ExitCode.FATAL_IF_INVALID_CONDITION)
     }
   }
-
   override def list: String = f"IF ${condition.list} THEN ${statement.list}"
+}
+
+case class GOSUB(toLine:LineNumber) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = {
+    program.lineByNum(toLine) match {
+      case Right(_) => environment.pushLine(toLine)
+      case Left(code) => environment.setExitCode(code)
+    }
+  }
+  override def list: String = f"GOSUB ${toLine.num}"
 }

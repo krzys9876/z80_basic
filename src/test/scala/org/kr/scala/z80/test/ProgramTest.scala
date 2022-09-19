@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -343,6 +343,28 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getCurrentLine.contains(LineNumber(30)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
       assert(environment.console == List("print this line\n","X\n"))
+    }
+  }
+  Feature("GOSUB jump") {
+    Scenario("run gosub line") {
+      Given("a program consisting of gosub line and other lines")
+      val program = new Program(Vector(
+        Line(10, PRINT(StaticTextExpr("A"))),
+        Line(20, GOSUB(40)),
+        Line(30, PRINT(StaticTextExpr("B"))),
+        Line(40, PRINT(StaticTextExpr("C"))),
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("jump is executed")
+      assert(environment.getCurrentLine.contains(LineNumber(40)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("A\n", "C\n"))
+      And("the program will resume after popped line")
+      val envAfter=environment.popLine
+      assert(envAfter.nextLineNum.contains(LineNumber(20)))
+      assert(envAfter.skiptoNextLine)
     }
   }
 }

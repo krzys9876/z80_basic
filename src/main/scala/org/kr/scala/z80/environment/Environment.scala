@@ -1,6 +1,7 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Program, Variable}
+import org.kr.scala.z80.program.{Line, LineNumber, Program, Variable}
+
 import scala.annotation.tailrec
 
 case class Environment(
@@ -9,21 +10,28 @@ case class Environment(
                    private val lineStack:LineStack,
                    console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
-                   nextLineNum:Option[LineNumber]=None) {
-  def resetNextLine:Environment=copy(nextLineNum=None)
+                   nextLineNum:Option[LineNumber]=None,
+                   skiptoNextLine:Boolean=false) {
+  def resetNextLine:Environment=copy(nextLineNum=None,skiptoNextLine=false)
   def setVariable(variable: Variable,value:Any):Environment= copy(variables=variables ++ Map(variable->value))
   def getValue(variable: Variable):Option[Any]=variables.get(variable)
   def getValueAs[T](variable: Variable):Option[T]=variables.get(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variable:Variable, line:LineNumber,
-                  start:BigDecimal,end:BigDecimal,step:BigDecimal, forStatus: ForStatus=ForStatus.STARTED):Environment=
+                  start:BigDecimal,end:BigDecimal,step:BigDecimal,
+                  forStatus: ForStatus=ForStatus.STARTED):Environment=
     copy(forStack=forStack.push(variable,ForState(variable,start,end,step,line,forStatus)))
   def clearForStack(variable:Variable):Environment= copy(forStack=forStack.pop(variable))
   def finishForStack(variable:Variable):Environment= {
-    val forState=getFor(variable).map(state=>ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
+    val forState=getFor(variable).map(state=>
+      ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
     forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
   }
+  def pushLine(nextLine:LineNumber):Environment= copy(lineStack=lineStack.push(getCurrentLine.get)).forceNextLine(nextLine)
+  private def forceNextLineAfterPop:Environment= forceNextLine(getCurrentLine.get)
+  def popLine:Environment= copy(lineStack=lineStack.pop).forceNextLineAfterPop.copy(skiptoNextLine=true)
+  //TODO: change to next line in program
 
   def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
   def getFor(variable:Option[Variable]):Option[ForState]=
@@ -32,6 +40,7 @@ case class Environment(
       case Some(forVar)=>getFor(forVar)
     }
 
+  //TODO: handle None result
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
   def run(program:Program):Environment= {
@@ -52,11 +61,29 @@ case class Environment(
     }
   }
 
-  private def runOneLine(lineNum:LineNumber,program: Program):(Environment,Either[ExitCode,LineNumber]) = {
+  //TODO: refactor and simplify
+  private def findLineToRun(lineNum: LineNumber, program: Program):Either[ExitCode,Line] = {
     program.lineByNum(lineNum) match {
+      case Left(code)=>Left(code)
+      case Right(line)=>
+        if(skiptoNextLine) {
+          program.lineNumAfter(line) match {
+            case Left(code)=>Left(code)
+            case Right(nextLine)=>
+              program.lineByNum(nextLine) match {
+                case Left(code)=>Left(code)
+                case Right(line)=>Right(line)
+              }
+          }
+        }
+        else Right(line)
+    }
+  }
+
+  private def runOneLine(lineNum:LineNumber,program: Program):(Environment,Either[ExitCode,LineNumber]) = {
+    findLineToRun(lineNum,program) match {
       case Left(code)=>(this,Left(code))
       case Right(lineToExecute)=>
-        // line execution creates new version of environment
         lineToExecute.execute(program,this.setLine(lineNum)) match {
           case env if env.exitCode!=ExitCode.NORMAL => (env,Left(env.exitCode))
           case env =>
