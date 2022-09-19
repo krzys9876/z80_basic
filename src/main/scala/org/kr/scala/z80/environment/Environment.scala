@@ -1,6 +1,6 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{Line, LineNumber, Program, Variable}
+import org.kr.scala.z80.program.{LineNumber, Program, Variable}
 
 import scala.annotation.tailrec
 
@@ -10,10 +10,7 @@ case class Environment(
                    private val lineStack:LineStack,
                    console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
-                      //TODO: combine nextLineNum and skiptoNextLine in one class
-                   nextLineNum:Option[LineNumber]=None,
-                   skiptoNextLine:Boolean=false) {
-  def resetNextLine:Environment=copy(nextLineNum=None,skiptoNextLine=false)
+                   nextLineNum:Option[LineNumber]=None) {
   def setVariable(variable: Variable,value:Any):Environment= copy(variables=variables ++ Map(variable->value))
   def getValue(variable: Variable):Option[Any]=variables.get(variable)
   def getValueAs[T](variable: Variable):Option[T]=variables.get(variable).map(_.asInstanceOf[T])
@@ -30,9 +27,16 @@ case class Environment(
     forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
   }
   def pushLine(nextLine:LineNumber):Environment= copy(lineStack=lineStack.push(getCurrentLine.get)).forceNextLine(nextLine)
-  private def forceNextLineAfterPop:Environment= forceNextLine(getCurrentLine.get)
-  def popLine:Environment= copy(lineStack=lineStack.pop).forceNextLineAfterPop.copy(skiptoNextLine=true)
-  //TODO: change to next line in program
+  def popLine(program: Program):Environment= copy(lineStack=lineStack.pop).setNextLineAfterPop(program)
+  private def setNextLineAfterPop(program: Program):Environment =
+    getCurrentLine match {
+      case None => setExitCode(ExitCode.MISSING_RETURN_LINE)
+      case Some(line) =>
+        program.lineAfter(line) match {
+          case Left(code)=>setExitCode(code)
+          case Right(line)=>forceNextLine(line.number)
+        }
+    }
 
   def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
   def getFor(variable:Option[Variable]):Option[ForState]=
@@ -62,16 +66,9 @@ case class Environment(
     }
   }
 
-  private def findLineToRun(lineNum: LineNumber, program: Program):Either[ExitCode,Line] = {
-    (program.lineByNum(lineNum),skiptoNextLine) match {
-      case (Left(code),_) =>Left(code)
-      case (Right(line),false)=>Right(line)
-      case (Right(line),true)=>program.lineAfter(line)
-    }
-  }
-
+  private def resetNextLine:Environment=copy(nextLineNum=None)
   private def runOneLine(lineNum:LineNumber,program: Program):(Environment,Either[ExitCode,LineNumber]) = {
-    findLineToRun(lineNum,program) match {
+    program.lineByNum(lineNum) match {
       case Left(code)=>(this,Left(code))
       case Right(lineToExecute)=>
         lineToExecute.execute(program,this.setLine(lineNum)) match {
@@ -85,8 +82,8 @@ case class Environment(
   }
 
   //TODO: create separate class with console and enable dynamic printing to screen
-  def consolePrint(text:String):Environment=copy(console=console++List(text))
-  def consolePrintln(text:String):Environment=copy(console=console++List(text+"\n"))
+  def consolePrint(text:String):Environment=copy(console=console++Vector(text))
+  def consolePrintln(text:String):Environment=copy(console=console++Vector(text+"\n"))
 
   def showConsole():Environment = {
     println(console.mkString(""))

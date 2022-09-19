@@ -138,3 +138,8 @@ case class GOSUB(toLine:LineNumber) extends Statement {
   }
   override def list: String = f"GOSUB ${toLine.num}"
 }
+
+case class RETURN() extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = environment.popLine(program)
+  override def list: String = f"RETURN"
+}

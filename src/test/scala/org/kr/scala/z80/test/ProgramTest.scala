@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, RETURN, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -257,7 +257,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("jump is executed")
       assert(environment.getCurrentLine.contains(LineNumber(40)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
-      assert(environment.console == List("A\n","C\n"))
+      assert(environment.console == List("A\n", "C\n"))
     }
     Scenario("run goto non-existing line") {
       Given("a program consisting of goto line and other lines")
@@ -281,8 +281,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("run if line with statement (pass)") {
       Given("a program consisting of if line with passing condition and statement after condition")
       val program = new Program(Vector(
-        Line(10, LET(Assignment("A",10))),
-        Line(20, IF(ExprOperation.eq("A",10),PRINT("A"))),
+        Line(10, LET(Assignment("A", 10))),
+        Line(20, IF(ExprOperation.eq("A", 10), PRINT("A"))),
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
@@ -297,8 +297,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("run if line with statement (fail)") {
       Given("a program consisting of if line with failing condition and statement after condition")
       val program = new Program(Vector(
-        Line(10, LET(Assignment("A",10))),
-        Line(20, IF(ExprOperation.eq("A",11),PRINT("A"))),
+        Line(10, LET(Assignment("A", 10))),
+        Line(20, IF(ExprOperation.eq("A", 11), PRINT("A"))),
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
@@ -313,8 +313,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("run if line with jump (pass)") {
       Given("a program consisting of if line with passing condition and jump (goto)")
       val program = new Program(Vector(
-        Line(10, LET(Assignment("A",10))),
-        Line(20, IF(ExprOperation.eq("A",10),GOTO(30))),
+        Line(10, LET(Assignment("A", 10))),
+        Line(20, IF(ExprOperation.eq("A", 10), GOTO(30))),
         Line(25, PRINT(StaticTextExpr("skip this line"))),
         Line(30, PRINT(StaticTextExpr("X")))
       ))
@@ -330,8 +330,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("run if line with jump (fail)") {
       Given("a program consisting of if line with failing condition and jump (goto)")
       val program = new Program(Vector(
-        Line(10, LET(Assignment("B",10))),
-        Line(20, IF(ExprOperation.eq("B",9),GOTO(30))),
+        Line(10, LET(Assignment("B", 10))),
+        Line(20, IF(ExprOperation.eq("B", 9), GOTO(30))),
         Line(25, PRINT(StaticTextExpr("print this line"))),
         Line(30, PRINT(StaticTextExpr("X")))
       ))
@@ -342,7 +342,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       And("conditional statement is executed")
       assert(environment.getCurrentLine.contains(LineNumber(30)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
-      assert(environment.console == List("print this line\n","X\n"))
+      assert(environment.console == List("print this line\n", "X\n"))
     }
   }
   Feature("GOSUB jump") {
@@ -362,9 +362,27 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.exitCode == ExitCode.PROGRAM_END)
       assert(environment.console == List("A\n", "C\n"))
       And("the program will resume after popped line")
-      val envAfter=environment.popLine
-      assert(envAfter.nextLineNum.contains(LineNumber(20)))
-      assert(envAfter.skiptoNextLine)
+      val envAfter = environment.popLine(program)
+      assert(envAfter.nextLineNum.contains(LineNumber(30)))
+    }
+    Scenario("run gosub and return") {
+      Given("a program consisting of gosub, return and other lines")
+      val program = new Program(Vector(
+        Line(10, PRINT(StaticTextExpr("A"))),
+        Line(20, GOSUB(50)),
+        Line(30, PRINT(StaticTextExpr("B"))),
+        Line(40, GOTO(70)),
+        Line(50, PRINT(StaticTextExpr("subroutine"))),
+        Line(60, RETURN()),
+        Line(70, PRINT(StaticTextExpr("end"))),
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("jump is executed")
+      assert(environment.getCurrentLine.contains(LineNumber(70)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("A\n", "subroutine\n", "B\n", "end\n"))
     }
   }
 }

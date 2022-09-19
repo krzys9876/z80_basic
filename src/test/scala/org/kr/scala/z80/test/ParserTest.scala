@@ -1,8 +1,8 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.expression.{ExprOperation, ExprVariable, StaticTextExpr}
+import org.kr.scala.z80.expression.{ExprOperation, StaticTextExpr}
 import org.kr.scala.z80.program.parser.LineParser
-import org.kr.scala.z80.program.{FOR, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, REM}
+import org.kr.scala.z80.program.{FOR, GOSUB, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, REM, RETURN}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -87,6 +87,21 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("20 GOTO A").isLeft)
       assert(LineParser("20 GOTO 1+2").isLeft)
       assert(LineParser("20 GOTO").isLeft)
+    }
+  }
+  Feature("parse GOSUB line") {
+    Scenario("parse GOSUB") {
+      assert(LineParser("20 GOSUB 123").contains(Line(20,GOSUB(123))))
+    }
+    Scenario("do not parse invalid GOSUB") {
+      assert(LineParser("20 GOSUB A").isLeft)
+      assert(LineParser("20 GOSUB 1+2").isLeft)
+      assert(LineParser("20 GOSUB").isLeft)
+    }
+  }
+  Feature("parse RETURN line") {
+    Scenario("parse RETURN") {
+      assert(LineParser("30 RETURN").contains(Line(30,RETURN())))
     }
   }
   Feature("parse IF line") {
