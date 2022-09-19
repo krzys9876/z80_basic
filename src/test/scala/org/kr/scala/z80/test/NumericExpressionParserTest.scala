@@ -22,8 +22,8 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("1234A").isLeft)
     }
     Scenario("parse numeric variables") {
-      assert(ExpressionTester("A").contains(ExprVariable(Variable("A"))))
-      assert(ExpressionTester("BCD").contains(ExprVariable(Variable("BCD"))))
+      assert(ExpressionTester("A").contains(ExprVariable("A")))
+      assert(ExpressionTester("BCD").contains(ExprVariable("BCD")))
     }
     Scenario("do not parse text variables") {
       assert(ExpressionTester("A$").isLeft)
@@ -40,9 +40,9 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("2 ^ 3 ^ 4").contains(
         ExprOperation.pow(ExprOperation.pow(ExprNumber(2),ExprNumber(3)),ExprNumber(4))))
       assert(ExpressionTester("3 ^ A ^ 5").contains(
-        ExprOperation.pow(ExprOperation.pow(ExprNumber(3),ExprVariable(Variable("A"))),ExprNumber(5))))
+        ExprOperation.pow(ExprOperation.pow(ExprNumber(3),ExprVariable("A")),ExprNumber(5))))
       assert(ExpressionTester("3 ^ (A ^5)").contains(
-        ExprOperation.pow(ExprNumber(3),ExprOperation.pow(ExprVariable(Variable("A")),ExprNumber(5)))))
+        ExprOperation.pow(ExprNumber(3),ExprOperation.pow(ExprVariable("A"),ExprNumber(5)))))
     }
     Scenario("parse multiplication / division") {
       assert(ExpressionTester("1.2 * 3.4").contains(
@@ -50,9 +50,9 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("2 * 3 / 4").contains(
         ExprOperation.div(ExprOperation.mul(ExprNumber(2),ExprNumber(3)),ExprNumber(4))))
       assert(ExpressionTester("3 / A * 5").contains(
-        ExprOperation.mul(ExprOperation.div(ExprNumber(3),ExprVariable(Variable("A"))),ExprNumber(5))))
+        ExprOperation.mul(ExprOperation.div(ExprNumber(3),ExprVariable("A")),ExprNumber(5))))
       assert(ExpressionTester("3 / (A*5)").contains(
-        ExprOperation.div(ExprNumber(3),ExprOperation.mul(ExprVariable(Variable("A")),ExprNumber(5)))))
+        ExprOperation.div(ExprNumber(3),ExprOperation.mul(ExprVariable("A"),ExprNumber(5)))))
     }
     Scenario("parse addition / subtraction") {
       assert(ExpressionTester("1.2 - 3.4").contains(
@@ -60,9 +60,9 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("2 + 3 - 4").contains(
         ExprOperation.minus(ExprOperation.plus(ExprNumber(2),ExprNumber(3)),ExprNumber(4))))
       assert(ExpressionTester("3 - A + 5").contains(
-        ExprOperation.plus(ExprOperation.minus(ExprNumber(3),ExprVariable(Variable("A"))),ExprNumber(5))))
+        ExprOperation.plus(ExprOperation.minus(ExprNumber(3),ExprVariable("A")),ExprNumber(5))))
       assert(ExpressionTester("3 + (A - 5)").contains(
-        ExprOperation.plus(ExprNumber(3),ExprOperation.minus(ExprVariable(Variable("A")),ExprNumber(5)))))
+        ExprOperation.plus(ExprNumber(3),ExprOperation.minus(ExprVariable("A"),ExprNumber(5)))))
     }
     Scenario("parse relational operators") {
       assert(ExpressionTester("1.2=3.4").contains(
@@ -70,9 +70,9 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("23<>34").contains(
         ExprOperation.ne(ExprNumber(23),ExprNumber(34))))
       assert(ExpressionTester("3 >= A <= 5").contains(
-        ExprOperation.le(ExprOperation.ge(ExprNumber(3),ExprVariable(Variable("A"))),ExprNumber(5))))
+        ExprOperation.le(ExprOperation.ge(ExprNumber(3),ExprVariable("A")),ExprNumber(5))))
       assert(ExpressionTester("3 > (A < 5)").contains(
-        ExprOperation.gt(ExprNumber(3),ExprOperation.lt(ExprVariable(Variable("A")),ExprNumber(5)))))
+        ExprOperation.gt(ExprNumber(3),ExprOperation.lt(ExprVariable("A"),ExprNumber(5)))))
     }
     Scenario("parse logical operations with precedence") {
       assert(ExpressionTester("1.2=3.4 OR 3=3").contains(

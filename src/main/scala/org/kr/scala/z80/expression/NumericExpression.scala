@@ -36,6 +36,10 @@ case class ExprVariable(variable: Variable) extends NumericExpression {
   override def list: String = variable.name
 }
 
+object ExprVariable {
+  def apply(varName:String):ExprVariable=new ExprVariable(Variable(varName))
+}
+
 case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression, operator: String) extends NumericExpression {
   override def evaluate(env: Environment): Either[String, BigDecimal] =
     (factor1.evaluate(env), factor2.evaluate(env)) match {
