@@ -1,15 +1,13 @@
 package org.kr.scala.z80.environment
 
 import org.kr.scala.z80.program.{LineNumber, Program, Variable}
-import org.kr.scala.z80.{environment, _}
-
 import scala.annotation.tailrec
 
 case class Environment(
                    private val variables:Map[Variable,Any],
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
-                   console:List[String],
+                   console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
                    nextLineNum:Option[LineNumber]=None) {
   def resetNextLine:Environment=copy(nextLineNum=None)
@@ -20,10 +18,10 @@ case class Environment(
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variable:Variable, line:LineNumber,
                   start:BigDecimal,end:BigDecimal,step:BigDecimal, forStatus: ForStatus=ForStatus.STARTED):Environment=
-    copy(forStack=forStack.push(variable,environment.ForState(variable,start,end,step,line,forStatus)))
+    copy(forStack=forStack.push(variable,ForState(variable,start,end,step,line,forStatus)))
   def clearForStack(variable:Variable):Environment= copy(forStack=forStack.pop(variable))
   def finishForStack(variable:Variable):Environment= {
-    val forState=getFor(variable).map(state=>environment.ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
+    val forState=getFor(variable).map(state=>ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
     forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
   }
 
@@ -69,6 +67,7 @@ case class Environment(
     }
   }
 
+  //TODO: create separate class with console and enable dynamic printing to screen
   def consolePrint(text:String):Environment=copy(console=console++List(text))
   def consolePrintln(text:String):Environment=copy(console=console++List(text+"\n"))
 
@@ -88,5 +87,5 @@ case class Environment(
 }
 
 object Environment {
-  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,List())
+  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,Vector())
 }
