@@ -1,6 +1,6 @@
 package org.kr.scala.z80.program.parser
 
-import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, ExprVariable, NumericExpression}
+import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
 
 trait ExpressionParser extends CommonParser with VariableParser {
   // Output type
@@ -28,12 +28,12 @@ trait ExpressionParser extends CommonParser with VariableParser {
 
   //TODO: add function calls (sin, cos, abs etc.)
 
-  private def factor1:PN = num | variableExpr | exprParen
+  private def factor1:PN = num | func | variableExpr | exprParen
+  private def func: PN = ("ABS" | "SIN" | "COS") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
   // Partial operation - decode only operator and the second factor, leave first factor unresolved
   private def operation1:PNN = "^" ~ factor1 ^^ { case op ~ f2 => ExprOperation(_, f2, op) }
-  //TODO: implement negation as function
-  //private def neg: P = "-" ~ factor1 ^^ { case name ~ b => ExprFunction(b,name) }
-  private def factor2:PN = /*neg |*/  factor1 ~ rep(operation1) ^^ {case f ~ op => applyOperations(f, op) }
+  private def neg: PN = "-" ~ factor1 ^^ { case _ ~ f => ExprFunction(f,"-") }
+  private def factor2:PN = neg | factor1 ~ rep(operation1) ^^ {case f ~ op => applyOperations(f, op) }
   private def operations2: PNN = ("*" | "/") ~ factor2 ^^ { case oper ~ f2 => ExprOperation(_, f2, oper) }
   private def factor3: PN = factor2 ~ rep(operations2) ^^ {case f ~ op => applyOperations(f, op) }
   private def operations3: PNN = ("+" | "-") ~ factor3 ^^ { case oper ~ b => ExprOperation(_, b, oper) }

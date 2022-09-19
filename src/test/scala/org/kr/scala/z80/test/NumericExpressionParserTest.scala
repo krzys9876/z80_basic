@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, ExprVariable, NumericExpression}
+import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
 import org.kr.scala.z80.program.Variable
 import org.kr.scala.z80.program.parser.{BaseParser, ExpressionParser}
 import org.scalatest.GivenWhenThen
@@ -8,13 +8,15 @@ import org.scalatest.featurespec.AnyFeatureSpec
 
 class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("parse numeric expression") {
-    Scenario("parse numbers") {
+    Scenario("parse positive numbers") {
       assert(ExpressionTester("1234").contains(ExprNumber(1234.0)))
-      assert(ExpressionTester("-4321").contains(ExprNumber(-4321.0)))
       assert(ExpressionTester("43.21").contains(ExprNumber(43.21)))
-      assert(ExpressionTester("-12.34").contains(ExprNumber(-12.34)))
       assert(ExpressionTester("2.34E-2").contains(ExprNumber(0.0234)))
-      assert(ExpressionTester("-5.6789E+3").contains(ExprNumber(-5678.9)))
+    }
+    Scenario("parse negation") {
+      assert(ExpressionTester("-4321").contains(ExprFunction(ExprNumber(4321.0),"-")))
+      assert(ExpressionTester("-12.34").contains(ExprFunction(ExprNumber(12.34),"-")))
+      assert(ExpressionTester("-5.6789E+3").contains(ExprFunction(ExprNumber(5678.9),"-")))
     }
     Scenario("do not parse text") {
       assert(ExpressionTester("1234A").isLeft)
@@ -26,6 +28,11 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("do not parse text variables") {
       assert(ExpressionTester("A$").isLeft)
       assert(ExpressionTester("BCD$").isLeft)
+    }
+    Scenario("parse high priority functions (sin, cos, abs, negation)") {
+      assert(ExpressionTester("SIN(3.14)").contains(ExprFunction(ExprNumber(3.14),"SIN")))
+      assert(ExpressionTester("COS(-3.14)").contains(ExprFunction(ExprFunction(ExprNumber(3.14),"-"),"COS")))
+      assert(ExpressionTester("ABS(-1.23)").contains(ExprFunction(ExprFunction(ExprNumber(1.23),"-"),"ABS")))
     }
     Scenario("parse power operator") {
       assert(ExpressionTester("1.2 ^ 3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"^")))
