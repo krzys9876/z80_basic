@@ -1,11 +1,12 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
-import org.kr.scala.z80.expression.{ExprNumber, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOTO, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
+import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, StaticTextExpr}
+import org.kr.scala.z80.program.{Assignment, FOR, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
+import org.kr.scala.z80.expression.ExprVariable._
 
 class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("Run dummy program line by line") {
@@ -274,6 +275,74 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getCurrentLine.contains(LineNumber(20)))
       assert(environment.exitCode == ExitCode.FATAL_LINE_NOT_FOUND)
       assert(environment.console == List("A\n"))
+    }
+  }
+  Feature("IF statement") {
+    Scenario("run if line with statement (pass)") {
+      Given("a program consisting of if line with passing condition and statement after condition")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment("A",10))),
+        Line(20, IF(ExprOperation.eq("A",10),PRINT("A"))),
+        Line(30, PRINT(StaticTextExpr("X")))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("condition is checked")
+      And("conditional statement is executed")
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("10\n", "X\n"))
+    }
+    Scenario("run if line with statement (fail)") {
+      Given("a program consisting of if line with failing condition and statement after condition")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment("A",10))),
+        Line(20, IF(ExprOperation.eq("A",11),PRINT("A"))),
+        Line(30, PRINT(StaticTextExpr("X")))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("condition is evaluated to false")
+      And("conditional statement is not executed")
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("X\n"))
+    }
+    Scenario("run if line with jump (pass)") {
+      Given("a program consisting of if line with passing condition and jump (goto)")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment("A",10))),
+        Line(20, IF(ExprOperation.eq("A",10),GOTO(30))),
+        Line(25, PRINT(StaticTextExpr("skip this line"))),
+        Line(30, PRINT(StaticTextExpr("X")))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("condition is checked")
+      And("conditional statement is executed")
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("X\n"))
+    }
+    Scenario("run if line with jump (fail)") {
+      Given("a program consisting of if line with failing condition and jump (goto)")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment("B",10))),
+        Line(20, IF(ExprOperation.eq("B",9),GOTO(30))),
+        Line(25, PRINT(StaticTextExpr("print this line"))),
+        Line(30, PRINT(StaticTextExpr("X")))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("condition is checked")
+      And("conditional statement is executed")
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+      assert(environment.exitCode == ExitCode.PROGRAM_END)
+      assert(environment.console == List("print this line\n","X\n"))
     }
   }
 }

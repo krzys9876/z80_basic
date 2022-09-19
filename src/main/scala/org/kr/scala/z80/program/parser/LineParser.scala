@@ -1,7 +1,7 @@
 package org.kr.scala.z80.program.parser
 
 import org.kr.scala.z80.expression.StaticTextExpr
-import org.kr.scala.z80.program.{Assignment, AssignmentBase, FOR, GOTO, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, AssignmentBase, FOR, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -44,9 +44,14 @@ trait LineNumberParser extends CommonParser {
   def lineNumber:Parser[LineNumber] = integerNumber ^^ {num => LineNumber(num.toInt) }
 }
 
-trait StatementParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
+trait StatementParser extends CommonParser with StatementWithoutIfParser with IfParser {
+  def statement: Parser[Statement] = statementWithoutIf | ifS
+}
+
+// avoid circular inheritance (IfParser cannot inherit from StatementParser, which must inherit from IfParser)
+trait StatementWithoutIfParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
   with LetParser with GotoParser {
-  def statement: Parser[Statement] = rem | print | for_ | next | let | goto
+  def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto
 }
 
 trait RemParser extends CommonParser {
@@ -98,4 +103,11 @@ trait LetParser extends AssignmentParser {
 
 trait GotoParser extends CommonParser {
   def goto:Parser[GOTO] = "GOTO" ~ integerNumber ^^ {case _ ~ l => GOTO(l.toInt)}
+}
+
+trait IfParser extends CommonParser with NumericExpressionParser with StatementWithoutIfParser {
+  def ifS :Parser[IF] =
+    "IF" ~ numericExpression ~ "THEN" ~ (ifS | statementWithoutIf) ^^ {case _ ~ c ~ _ ~ s => IF(c,s)} |
+      "IF" ~ numericExpression ~ "THEN" ~ integerNumber ^^ {case _ ~ c ~ _ ~ n => IF(c,GOTO(n.toInt))} |
+      "IF" ~ numericExpression ~ goto ^^ {case _ ~ c ~ s => IF(c,s)}
 }

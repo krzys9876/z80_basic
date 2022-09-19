@@ -2,13 +2,21 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.program.parser.LineParser
-import org.kr.scala.z80.program.{FOR, GOTO, LET, Line, NEXT, NumericAssignment, PRINT, REM}
+import org.kr.scala.z80.program.{FOR, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, REM}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
 import org.kr.scala.z80.expression.ExprNumber._
 
 class ParserTest extends AnyFeatureSpec with GivenWhenThen {
+  Feature("do not parse invalid line") {
+    Scenario("do not parse line without number") {
+      assert(LineParser("PRINT 'aa'").isLeft)
+    }
+    Scenario("do not parse invalid statement") {
+      assert(LineParser("10 INVALID").isLeft)
+    }
+  }
   Feature("parse REM line") {
     Scenario("parse REM and comment") {
       assert(LineParser("10 REM aAbB").contains(Line(10, REM("aAbB"))))
@@ -41,7 +49,7 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("parse NEXT without variable") {
       assert(LineParser("10 NEXT").contains(Line(10,NEXT())))
     }
-    Scenario("parse NEXT with text variable (invalid)") {
+    Scenario("do not parse NEXT with text variable") {
       assert(LineParser("10 NEXT B$").isLeft)
     }
   }
@@ -81,13 +89,14 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("20 GOTO").isLeft)
     }
   }
-
-  Feature("parse invalid line") {
-    Scenario("parse invalid line") {
-      assert(LineParser("PRINT 'aa'").isLeft)
+  Feature("parse IF line") {
+    Scenario("parse IF") {
+      assert(LineParser("20 IF I=5 THEN PRINT 'X'").contains(Line(20, IF(ExprOperation.eq("I", 5), PRINT(StaticTextExpr("X"))))))
     }
-    Scenario("parse invalid statement") {
-      assert(LineParser("10 INVALID").isLeft)
+    Scenario("parse variants of IF with GOTO") {
+      assert(LineParser("20 IF I=5 THEN GOTO 30").contains(Line(20, IF(ExprOperation.eq("I", 5), GOTO(30)))))
+      assert(LineParser("20 IF I=5 GOTO 30").contains(Line(20, IF(ExprOperation.eq("I", 5), GOTO(30)))))
+      assert(LineParser("20 IF I=5 THEN 30").contains(Line(20, IF(ExprOperation.eq("I", 5), GOTO(30)))))
     }
   }
 }

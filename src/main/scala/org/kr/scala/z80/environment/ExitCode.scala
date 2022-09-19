@@ -19,6 +19,10 @@ object ExitCode {
     override def toString: String = "FATAL_FOR_MISSING_VALUE"
   }
 
+  case object FATAL_IF_INVALID_CONDITION extends ExitCode {
+    override def toString: String = "FATAL_IF_INVALID_CONDITION"
+  }
+
   case object FATAL_FOR_CANNOT_GET_VALUE extends ExitCode {
     override def toString: String = "FATAL_FOR_CANNOT_GET_VALUE"
   }

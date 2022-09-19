@@ -3,6 +3,8 @@ package org.kr.scala.z80.program
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState, ForStatus}
 import org.kr.scala.z80.expression.{Expression, NumericExpression, TextExpression}
 
+import scala.math.BigDecimal
+
 trait Statement extends Listable {
   override def list: String
   def execute(program: Program, environment: Environment): Environment
@@ -123,4 +125,16 @@ case class GOTO(toLine:LineNumber) extends Statement {
   }
 
   override def list: String = f"GOTO ${toLine.num}"
+}
+
+case class IF(condition:NumericExpression,statement: Statement) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = {
+    condition.valueNum(environment) match {
+      case Some(v) if v==BigDecimal(0) => environment
+      case Some(_) => statement.execute(program,environment)
+      case None => environment.setExitCode(ExitCode.FATAL_IF_INVALID_CONDITION)
+    }
+  }
+
+  override def list: String = f"IF ${condition.list} THEN ${statement.list}"
 }
