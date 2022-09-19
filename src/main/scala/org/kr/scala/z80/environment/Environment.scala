@@ -5,31 +5,26 @@ import org.kr.scala.z80.{environment, _}
 
 import scala.annotation.tailrec
 
-class Environment(
+case class Environment(
                    private val variables:Map[Variable,Any],
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
-                   val console:List[String],
-                   val exitCode:ExitCode=ExitCode.NORMAL,
-                   val nextLineNum:Option[LineNumber]=None) {
-  def setVariable(variable: Variable,value:Any):Environment=
-    new Environment(variables ++ Map(variable->value),forStack,lineStack,console)
+                   console:List[String],
+                   exitCode:ExitCode=ExitCode.NORMAL,
+                   nextLineNum:Option[LineNumber]=None) {
+  def resetNextLine:Environment=copy(nextLineNum=None)
+  def setVariable(variable: Variable,value:Any):Environment= copy(variables=variables ++ Map(variable->value))
   def getValue(variable: Variable):Option[Any]=variables.get(variable)
   def getValueAs[T](variable: Variable):Option[T]=variables.get(variable).map(_.asInstanceOf[T])
-  def setLine(num:LineNumber):Environment={
-    val newLineStack=lineStack.changeTopTo(num)
-    new Environment(variables,forStack,newLineStack,console)
-  }
-  def forceNextLine(num:LineNumber):Environment=
-    new Environment(variables,forStack,lineStack,console,exitCode,Some(num))
+  def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
+  def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variable:Variable, line:LineNumber,
                   start:BigDecimal,end:BigDecimal,step:BigDecimal, forStatus: ForStatus=ForStatus.STARTED):Environment=
-    new Environment(variables,forStack.push(variable,environment.ForState(variable,start,end,step,line,forStatus)),lineStack,console)
-  def clearForStack(variable:Variable):Environment=
-    new Environment(variables,forStack.pop(variable),lineStack,console)
+    copy(forStack=forStack.push(variable,environment.ForState(variable,start,end,step,line,forStatus)))
+  def clearForStack(variable:Variable):Environment= copy(forStack=forStack.pop(variable))
   def finishForStack(variable:Variable):Environment= {
     val forState=getFor(variable).map(state=>environment.ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
-    forState.map(state=>new Environment(variables,forStack.push(variable,state),lineStack,console)).getOrElse(this)
+    forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
   }
 
   def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
@@ -45,14 +40,16 @@ class Environment(
     runLine(program.firstLineNumber,program)
   }
 
-  def setExitCode(code:ExitCode):Environment = new Environment(variables,forStack,lineStack,console,code,None)
+  def setExitCode(code:ExitCode):Environment = copy(exitCode=code)
 
   @tailrec
   final def runLine(action:Either[ExitCode,LineNumber], program: Program):Environment= {
     action match {
       case Left(code) =>setExitCode(code) // end of program
       case Right(lineNum) =>
-        val (afterEnv,nextAction)=runOneLine(lineNum,program)
+        val (afterEnv,nextAction)=
+          resetNextLine
+            .runOneLine(lineNum,program)
         afterEnv.runLine(nextAction,program)
     }
   }
@@ -72,8 +69,8 @@ class Environment(
     }
   }
 
-  def consolePrint(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text))
-  def consolePrintln(text:String):Environment=new Environment(variables,forStack,lineStack,console++List(text+"\n"))
+  def consolePrint(text:String):Environment=copy(console=console++List(text))
+  def consolePrintln(text:String):Environment=copy(console=console++List(text+"\n"))
 
   def showConsole():Environment = {
     println(console.mkString(""))

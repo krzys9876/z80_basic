@@ -1,7 +1,7 @@
 package org.kr.scala.z80.program.parser
 
 import org.kr.scala.z80.expression.StaticTextExpr
-import org.kr.scala.z80.program.{Assignment, AssignmentBase, FOR, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, AssignmentBase, FOR, GOTO, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -45,8 +45,8 @@ trait LineNumberParser extends CommonParser {
 }
 
 trait StatementParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
-  with LetParser {
-  def statement: Parser[Statement] = rem | print | for_ | next | let
+  with LetParser with GotoParser {
+  def statement: Parser[Statement] = rem | print | for_ | next | let | goto
 }
 
 trait RemParser extends CommonParser {
@@ -94,4 +94,8 @@ trait AssignmentParser extends VariableParser with NumericExpressionParser {
 trait LetParser extends AssignmentParser {
   def let:Parser[LET] = (numericAssignment | textAssignment) ^^ {a => LET(a)} |
     "LET" ~ (numericAssignment | textAssignment) ^^ {case _ ~ a => LET(a)}
+}
+
+trait GotoParser extends CommonParser {
+  def goto:Parser[GOTO] = "GOTO" ~ integerNumber ^^ {case _ ~ l => GOTO(l.toInt)}
 }

@@ -2,10 +2,9 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.program.parser.LineParser
-import org.kr.scala.z80.program.{FOR, LET, Line, NEXT, NumericAssignment, PRINT, REM}
+import org.kr.scala.z80.program.{FOR, GOTO, LET, Line, NEXT, NumericAssignment, PRINT, REM}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
-import org.kr.scala.z80.program.Variable._
 import org.kr.scala.z80.expression.ExprVariable._
 import org.kr.scala.z80.expression.ExprNumber._
 
@@ -53,7 +52,7 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("15 LET A=12+34").contains(Line(15,
         LET(NumericAssignment("A",ExprOperation.plus(12,34))))))
       assert(LineParser("15 LET A=B*2").contains(Line(15,
-        LET(NumericAssignment("A",ExprOperation.mul(ExprVariable("B"),2))))))
+        LET(NumericAssignment("A",ExprOperation.mul("B",2))))))
     }
   }
 
@@ -63,6 +62,23 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("parse FOR with STEP") {
       assert(LineParser("20 FOR I=5 TO 35 STEP 10").contains(Line(20,FOR(NumericAssignment("I",5),35,Some(10)))))
+    }
+    Scenario("do not parse invalid FOR") {
+      assert(LineParser("20 FOR I= TO 35 STEP 10").isLeft)
+      assert(LineParser("20 FOR 1=2 TO 35 STEP 10").isLeft)
+      assert(LineParser("20 FOR I=2 TO A$").isLeft)
+      assert(LineParser("20 FOR I=2 A$").isLeft)
+    }
+  }
+
+  Feature("parse GOTO line") {
+    Scenario("parse GOTO") {
+      assert(LineParser("20 GOTO 123").contains(Line(20,GOTO(123))))
+    }
+    Scenario("do not parse invalid GOTO") {
+      assert(LineParser("20 GOTO A").isLeft)
+      assert(LineParser("20 GOTO 1+2").isLeft)
+      assert(LineParser("20 GOTO").isLeft)
     }
   }
 

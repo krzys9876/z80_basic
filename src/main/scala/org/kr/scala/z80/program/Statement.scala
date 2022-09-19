@@ -113,3 +113,14 @@ case class LET(assignment: AssignmentBase) extends Statement {
 
   override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"
 }
+
+case class GOTO(toLine:LineNumber) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = {
+    program.lineByNum(toLine) match {
+      case Right(line) => environment.forceNextLine(line.number)
+      case Left(code) => environment.setExitCode(code)
+    }
+  }
+
+  override def list: String = f"GOTO ${toLine.num}"
+}

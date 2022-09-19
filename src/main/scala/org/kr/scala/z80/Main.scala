@@ -15,7 +15,10 @@ object Main extends App {
     LineParser.force("50 PRINT J"),
     LineParser.force("55 PRINT \"abc\""),
     LineParser.force("56 PRINT J*10.01"),
-    LineParser.force("60 NEXT J")
+    LineParser.force("60 NEXT J"),
+    LineParser.force("70 GOTO 80"),
+    LineParser.force("75 PRINT \"this line should be skipped\""),
+    LineParser.force("80 PRINT \"program ends here\""),
   ))
   program.show()
   println()
