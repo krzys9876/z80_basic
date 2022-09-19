@@ -52,6 +52,12 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("3 - A + 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"-"),ExprNumber(5),"+")))
       assert(ExpressionTester("3 + (A - 5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"-"),"+")))
     }
+    Scenario("parse comparison") {
+      assert(ExpressionTester("1.2=3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"=")))
+      assert(ExpressionTester("23<>34").contains(ExprOperation(ExprNumber(23),ExprNumber(34),"<>")))
+      assert(ExpressionTester("3 >= A <= 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),">="),ExprNumber(5),"<=")))
+      assert(ExpressionTester("3 > (A < 5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"<"),">")))
+    }
   }
 }
 
