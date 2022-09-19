@@ -240,8 +240,8 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       Then("return correct numbers")
       assert(eVal==1.5)
     }
-    Scenario("evaluate comparison operators") {
-      Given("expressions representing comparison (> < = <> >= <=)")
+    Scenario("evaluate relational operators") {
+      Given("expressions representing relational operators (> < = <> >= <=)")
       val e=List(
         ExprOperation(ExprNumber(1),ExprNumber(2),"="),
         ExprOperation(ExprNumber(1),ExprNumber(2),"<>"),
@@ -256,7 +256,26 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       Then("return correct numbers")
       assert(eVals==List(0,-1,0,-1,-1,0))
     }
-
+    Scenario("evaluate logical functions") {
+      Given("expressions representing logical functions (not, and, or)")
+      val e=List(
+        ExprFunction(ExprOperation(ExprNumber(1),ExprNumber(1),"="),"NOT"),
+        ExprOperation(ExprNumber(-1),ExprNumber(-1),"AND"),
+        ExprOperation(ExprNumber(-1),ExprNumber(0),"OR"),
+        ExprOperation(
+          ExprOperation(ExprNumber(1),ExprNumber(2),">"),
+          ExprOperation(ExprNumber(2),ExprNumber(1),">"),
+          "OR"),
+        ExprOperation(
+          ExprOperation(ExprNumber(3),ExprNumber(1),">"),
+          ExprOperation(ExprNumber(2),ExprNumber(1),"<"),
+          "AND")
+      )
+      val env=Environment.empty
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env).get)
+      Then("return correct numbers")
+      assert(eVals==List(0,-1,-1,-1,0))
+    }
   }
 }
-

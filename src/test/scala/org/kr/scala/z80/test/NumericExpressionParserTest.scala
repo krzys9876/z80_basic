@@ -35,28 +35,57 @@ class NumericExpressionParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(ExpressionTester("ABS(-1.23)").contains(ExprFunction(ExprFunction(ExprNumber(1.23),"-"),"ABS")))
     }
     Scenario("parse power operator") {
-      assert(ExpressionTester("1.2 ^ 3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"^")))
-      assert(ExpressionTester("2 ^ 3 ^ 4").contains(ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"^"),ExprNumber(4),"^")))
-      assert(ExpressionTester("3 ^ A ^ 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"^"),ExprNumber(5),"^")))
-      assert(ExpressionTester("3 ^ (A ^5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"^"),"^")))
+      assert(ExpressionTester("1.2 ^ 3.4").contains(
+        ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"^")))
+      assert(ExpressionTester("2 ^ 3 ^ 4").contains(
+        ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"^"),ExprNumber(4),"^")))
+      assert(ExpressionTester("3 ^ A ^ 5").contains(
+        ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"^"),ExprNumber(5),"^")))
+      assert(ExpressionTester("3 ^ (A ^5)").contains(
+        ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"^"),"^")))
     }
     Scenario("parse multiplication / division") {
-      assert(ExpressionTester("1.2 * 3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"*")))
-      assert(ExpressionTester("2 * 3 / 4").contains(ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"*"),ExprNumber(4),"/")))
-      assert(ExpressionTester("3 / A * 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"/"),ExprNumber(5),"*")))
-      assert(ExpressionTester("3 / (A*5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"*"),"/")))
+      assert(ExpressionTester("1.2 * 3.4").contains(
+        ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"*")))
+      assert(ExpressionTester("2 * 3 / 4").contains(
+        ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"*"),ExprNumber(4),"/")))
+      assert(ExpressionTester("3 / A * 5").contains(
+        ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"/"),ExprNumber(5),"*")))
+      assert(ExpressionTester("3 / (A*5)").contains(
+        ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"*"),"/")))
     }
     Scenario("parse addition / subtraction") {
-      assert(ExpressionTester("1.2 - 3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"-")))
-      assert(ExpressionTester("2 + 3 - 4").contains(ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"+"),ExprNumber(4),"-")))
-      assert(ExpressionTester("3 - A + 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"-"),ExprNumber(5),"+")))
-      assert(ExpressionTester("3 + (A - 5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"-"),"+")))
+      assert(ExpressionTester("1.2 - 3.4").contains(
+        ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"-")))
+      assert(ExpressionTester("2 + 3 - 4").contains(
+        ExprOperation(ExprOperation(ExprNumber(2),ExprNumber(3),"+"),ExprNumber(4),"-")))
+      assert(ExpressionTester("3 - A + 5").contains(
+        ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),"-"),ExprNumber(5),"+")))
+      assert(ExpressionTester("3 + (A - 5)").contains(
+        ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"-"),"+")))
     }
-    Scenario("parse comparison") {
-      assert(ExpressionTester("1.2=3.4").contains(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"=")))
-      assert(ExpressionTester("23<>34").contains(ExprOperation(ExprNumber(23),ExprNumber(34),"<>")))
-      assert(ExpressionTester("3 >= A <= 5").contains(ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),">="),ExprNumber(5),"<=")))
-      assert(ExpressionTester("3 > (A < 5)").contains(ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"<"),">")))
+    Scenario("parse relational operators") {
+      assert(ExpressionTester("1.2=3.4").contains(
+        ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"=")))
+      assert(ExpressionTester("23<>34").contains(
+        ExprOperation(ExprNumber(23),ExprNumber(34),"<>")))
+      assert(ExpressionTester("3 >= A <= 5").contains(
+        ExprOperation(ExprOperation(ExprNumber(3),ExprVariable(Variable("A")),">="),ExprNumber(5),"<=")))
+      assert(ExpressionTester("3 > (A < 5)").contains(
+        ExprOperation(ExprNumber(3),ExprOperation(ExprVariable(Variable("A")),ExprNumber(5),"<"),">")))
+    }
+    Scenario("parse logical operations with precedence") {
+      assert(ExpressionTester("1.2=3.4 OR 3=3").contains(
+        ExprOperation(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"="),ExprOperation(ExprNumber(3),ExprNumber(3),"="),"OR")))
+      assert(ExpressionTester("1.2=3.4 OR 3=3 AND 5=4").contains(
+        ExprOperation(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"="),
+          ExprOperation(
+            ExprOperation(ExprNumber(3),ExprNumber(3),"="),ExprOperation(ExprNumber(5),ExprNumber(4),"="),"AND"),
+          "OR")))
+      assert(ExpressionTester("NOT 1.2=3.4 AND 3=3").contains(
+        ExprOperation(
+          ExprFunction(ExprOperation(ExprNumber(1.2),ExprNumber(3.4),"="),"NOT"),ExprOperation(ExprNumber(3),ExprNumber(3),"=")
+          ,"AND")))
     }
   }
 }
