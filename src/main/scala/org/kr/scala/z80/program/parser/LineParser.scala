@@ -34,8 +34,7 @@ trait CommonParser extends JavaTokenParsers {
   def anyText: Parser[String] = """(.*)""".r
   def anyTextQuoted:Parser[String] = anyText ^^ {
     case t if t.startsWith("'") && t.endsWith("'") => removeFirstAndLastCharacter(t)
-    case t if t.startsWith("\"") && t.endsWith("\"") => removeFirstAndLastCharacter(t)
-    case t => t}
+    case t if t.startsWith("\"") && t.endsWith("\"") => removeFirstAndLastCharacter(t)}
   def emptyString:Parser[String] = """(^$)""".r
   private def removeFirstAndLastCharacter(t:String):String = t.substring(1,t.length-1)
 }
@@ -55,11 +54,11 @@ trait StatementWithoutIfParser extends CommonParser with RemParser with PrintPar
 }
 
 trait RemParser extends CommonParser {
-  def rem:Parser[REM] = "REM" ~ (anyTextQuoted | emptyString) ^^ {case _ ~ t => REM(t)}
+  def rem:Parser[REM] = "REM" ~ (anyText | emptyString) ^^ {case _ ~ t => REM(t)}
 }
 
 trait StaticTextExprParser extends CommonParser {
-  def staticTextExpr:Parser[StaticTextExpr] = (anyTextQuoted | emptyString) ^^ {t => StaticTextExpr(t)}
+  def staticTextExpr:Parser[StaticTextExpr] = (anyTextQuoted | emptyString) ^^ StaticTextExpr
 }
 
 trait PrintParser extends CommonParser with StaticTextExprParser with NumericExpressionParser {
@@ -97,7 +96,7 @@ trait AssignmentParser extends VariableParser with NumericExpressionParser {
 }
 
 trait LetParser extends AssignmentParser {
-  def let:Parser[LET] = (numericAssignment | textAssignment) ^^ {a => LET(a)} |
+  def let:Parser[LET] = (numericAssignment | textAssignment) ^^ {LET(_)} |
     "LET" ~ (numericAssignment | textAssignment) ^^ {case _ ~ a => LET(a)}
 }
 

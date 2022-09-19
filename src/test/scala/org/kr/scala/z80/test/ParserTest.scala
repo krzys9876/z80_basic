@@ -23,10 +23,10 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("20 REM 123 xYz").contains(Line(20, REM("123 xYz"))))
     }
     Scenario("parse REM with quoted comment") {
-      assert(LineParser("10 REM 'aA \"bB'").contains(Line(10, REM("aA \"bB"))))
-      assert(LineParser("20 REM \"aA 'bB\"").contains(Line(20, REM("aA 'bB"))))
-      assert(LineParser("30 REM \"\"").contains(Line(30, REM(""))))
-      assert(LineParser("40 REM ''").contains(Line(40, REM(""))))
+      assert(LineParser("10 REM 'aA \"bB'").contains(Line(10, REM("'aA \"bB'"))))
+      assert(LineParser("20 REM \"aA 'bB\"").contains(Line(20, REM("\"aA 'bB\""))))
+      assert(LineParser("30 REM \"\"").contains(Line(30, REM("\"\""))))
+      assert(LineParser("40 REM ''").contains(Line(40, REM("''"))))
     }
     Scenario("parse REM without comment") {
       assert(LineParser("10 REM").contains(Line(10,REM(""))))

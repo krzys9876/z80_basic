@@ -55,6 +55,5 @@ case class Variable(name: String) extends Listable {
 }
 
 object Variable {
-  def apply(name: String): Variable = new Variable(name)
   implicit def fromString(name:String):Variable = new Variable(name)
 }
