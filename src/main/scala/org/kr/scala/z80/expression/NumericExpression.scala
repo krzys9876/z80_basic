@@ -113,9 +113,14 @@ case class ExprFunction(factor:NumericExpression, function:String) extends Numer
     else
       Right(func(v.toShort))
 
-  // -1 (not 1) represents True according to MS Basic documentation
-  // it is a binary number consisting of only '1'
-  private def boolToNum(bool:Boolean):Int=if(bool) -1 else 0
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
   override def list: String = f"$function(${factor.list})"
+}
+
+object ExprFunction {
+  def abs(factor:NumericExpression):ExprFunction=ExprFunction(factor,"ABS")
+  def sin(factor:NumericExpression):ExprFunction=ExprFunction(factor,"SIN")
+  def cos(factor:NumericExpression):ExprFunction=ExprFunction(factor,"COS")
+  def not(factor:NumericExpression):ExprFunction=ExprFunction(factor,"NOT")
+  def neg(factor:NumericExpression):ExprFunction=ExprFunction(factor,"-")
 }

@@ -28,7 +28,7 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("10 PRINT \"abc d \"").contains(Line(LineNumber(10),PRINT(StaticTextExpr("abc d ")))))
     }
     Scenario("parse PRINT with numeric expression") {
-      assert(LineParser("10 PRINT 1+2").contains(Line(LineNumber(10),PRINT(ExprOperation(ExprNumber(1),ExprNumber(2),"+")))))
+      assert(LineParser("10 PRINT 1+2").contains(Line(LineNumber(10),PRINT(ExprOperation.plus(ExprNumber(1),ExprNumber(2))))))
     }
   }
 
