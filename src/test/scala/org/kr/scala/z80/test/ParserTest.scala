@@ -1,7 +1,8 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.StaticTextExpr
-import org.kr.scala.z80.program.{LineParser, Line, LineNumber, PRINT, REM}
+import org.kr.scala.z80.program.parser.LineParser
+import org.kr.scala.z80.program.{Line, LineNumber, NEXT, PRINT, REM, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
@@ -25,6 +26,18 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("parse PRINT line") {
     Scenario("parse PRINT with single text") {
       assert(LineParser("10 PRINT \"abc d \"").contains(Line(LineNumber(10),PRINT(StaticTextExpr("abc d ")))))
+    }
+  }
+
+  Feature("parse NEXT line") {
+    Scenario("parse NEXT with variable") {
+      assert(LineParser("10 NEXT A").contains(Line(LineNumber(10),NEXT(Some(Variable("A"))))))
+    }
+    Scenario("parse NEXT without variable") {
+      assert(LineParser("10 NEXT").contains(Line(LineNumber(10),NEXT(None))))
+    }
+    Scenario("parse NEXT with text variable (invalid)") {
+      assert(LineParser("10 NEXT B$").isLeft)
     }
   }
 

@@ -73,6 +73,33 @@ case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression,
   // it is a binary number consisting of only '1'
   private def boolToNum(bool:Boolean):Int=if(bool) -1 else 0
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
-  override def list: String =
-    f"(${factor1.list} $operator ${factor2.list})"
+  override def list: String = f"(${factor1.list} $operator ${factor2.list})"
+}
+
+case class ExprFunction(factor:NumericExpression, function:String) extends NumericExpression {
+  override def evaluate(env: Environment): Either[String, BigDecimal] =
+    factor.evaluate(env) match {
+      case Right(v) =>
+        function match {
+          case "ABS" => Right(scala.math.abs(v.toDouble))
+          case "SIN" => Right(scala.math.sin(v.toDouble))
+          case "COS" => Right(scala.math.cos(v.toDouble))
+          case "NOT" => bitwiseOper(v.toDouble, ~_)
+          case "-" => Right(-v)
+          case fun => Left(f"function: $fun is not supported")
+        }
+      case Left(msg) => Left(msg)
+    }
+
+  private def bitwiseOper(v:Double,func:Short=>Double):Either[String,BigDecimal] =
+    if(v>32767 || v< -32768)
+      Left("value out of range")
+    else
+      Right(func(v.toShort))
+
+  // -1 (not 1) represents True according to MS Basic documentation
+  // it is a binary number consisting of only '1'
+  private def boolToNum(bool:Boolean):Int=if(bool) -1 else 0
+  override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
+  override def list: String = f"$function(${factor.list})"
 }

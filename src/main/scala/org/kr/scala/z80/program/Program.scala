@@ -2,7 +2,8 @@ package org.kr.scala.z80.program
 
 import org.kr.scala.z80.environment.ExitCode
 
-class Program(val lines: Vector[Line]) {
+class Program(val srcLines: Vector[Line]) {
+  val lines:Vector[Line] = srcLines.sortBy(_.number.num)
   def show(): Unit = lines.foreach(line => println(line.list))
 
   def firstLineNumber: Either[ExitCode,LineNumber] =

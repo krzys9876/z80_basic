@@ -1,7 +1,7 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, ExprVariable}
+import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable}
 import org.kr.scala.z80.program.Variable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
@@ -115,17 +115,70 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       When("evaluated")
       val eVal=e.valueNum(env)
       val eErr=e.evaluate(env)
-      Then("return correct numbers")
+      Then("return error")
       assert(eVal.isEmpty)
       assert(eErr.isLeft)
     }
+    Scenario("evaluate functions (numbers only)") {
+      Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
+      val e=List(
+        ExprFunction(ExprNumber(1),"-"),
+        ExprFunction(ExprNumber(0),"SIN"),
+        ExprFunction(ExprNumber(0),"COS"),
+        ExprFunction(ExprNumber(-1.23),"ABS"),
+        ExprFunction(ExprNumber(2.34),"ABS"),
+        ExprFunction(ExprNumber(0x55),"NOT"), // bitwise not
+      )
+      val env=Environment.empty
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env).get)
+      Then("return correct numbers")
+      assert(eVals==List(-1.0,0.0,1.0,1.23,2.34,0xAA-256))
+    }
+    Scenario("evaluate functions (variables)") {
+      Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
+      val e=List(
+        ExprFunction(ExprVariable(Variable("A")),"-"),
+        ExprFunction(ExprVariable(Variable("B")),"SIN"),
+        ExprFunction(ExprVariable(Variable("C")),"COS"),
+        ExprFunction(ExprVariable(Variable("D")),"ABS"),
+        ExprFunction(ExprVariable(Variable("E")),"ABS"),
+        ExprFunction(ExprVariable(Variable("F")),"NOT"), // bitwise not
+      )
+      val env=Environment.empty
+        .setVariable(Variable("A"),BigDecimal(-10))
+        .setVariable(Variable("B"),BigDecimal(0))
+        .setVariable(Variable("C"),BigDecimal(0))
+        .setVariable(Variable("D"),BigDecimal(-3.2))
+        .setVariable(Variable("E"),BigDecimal(4.3))
+        .setVariable(Variable("F"),BigDecimal(0xAA))
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env).get)
+      Then("return correct numbers")
+      assert(eVals==List(10.0,0.0,1.0,3.2,4.3,0x55-256))
+    }
+    Scenario("evaluate incorrect functions (numbers only)") {
+      Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
+      val e=List(
+        ExprFunction(ExprNumber(0xEEEE),"NOT"),
+      )
+      val env=Environment.empty
+      When("evaluated")
+      val eVals=e.map(_.valueNum(env))
+      val eErrs=e.map(_.evaluate(env))
+      Then("return error")
+      assert(eVals.forall(_.isEmpty))
+      assert(eErrs.forall(_.isLeft))
+    }
     Scenario("evaluate nested arithmetic expression (numbers only)") {
-      Given("expressions representing an actual arithmetic expression: ((a+b)*(c-d))/(e^f-g)")
+      Given("expressions representing an actual arithmetic expression: ((a+(-b))*(c-d))/(e^ABS(f)-g)")
       val e=ExprOperation(
         ExprOperation(
           ExprOperation(
             ExprNumber(-1),
-            ExprNumber(3),
+            ExprFunction(
+              ExprNumber(-3),
+              "-"),
             "+"),
           ExprOperation(
             ExprNumber(-5),
@@ -136,7 +189,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprOperation(
           ExprOperation(
             ExprNumber(2),
-            ExprNumber(3),
+            ExprFunction(
+              ExprNumber(-3),
+              "ABS"),
             "^"
           ),
           ExprNumber(4),
@@ -149,12 +204,14 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       assert(eVal==1.5)
     }
     Scenario("evaluate nested arithmetic expression (with variables)") {
-      Given("expressions representing an actual arithmetic expression: ((a+b)*(c-d))/(e^f-g)")
+      Given("expressions representing an actual arithmetic expression: ((a+(-b))*(c-d))/(e^ABS(f)-g)")
       val e=ExprOperation(
         ExprOperation(
           ExprOperation(
             ExprNumber(-1),
-            ExprVariable(Variable("V3")),
+            ExprFunction(
+              ExprVariable(Variable("V3")),
+              "-"),
             "+"),
           ExprOperation(
             ExprNumber(-5),
@@ -165,7 +222,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprOperation(
           ExprOperation(
             ExprVariable(Variable("V2")),
-            ExprVariable(Variable("V3")),
+            ExprFunction(
+              ExprVariable(Variable("V3")),
+              "ABS"),
             "^"
           ),
           ExprVariable(Variable("V4")),
@@ -174,7 +233,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       And("variables exists in environment")
       val env=Environment.empty
         .setVariable(Variable("V2"),BigDecimal(2))
-        .setVariable(Variable("V3"),BigDecimal(3))
+        .setVariable(Variable("V3"),BigDecimal(-3))
         .setVariable(Variable("V4"),BigDecimal(4))
       When("evaluated")
       val eVal=e.valueNum(env).get
