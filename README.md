@@ -20,9 +20,9 @@ We'll see what's going to come up from this :)
 
 <img src="https://img.shields.io/badge/GOTO-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/DIM-Planned-lightgray.svg"/></a>
+<img src="https://img.shields.io/badge/GOSUB / RETURN-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/GOSUB / RETURN-Planned-lightgray.svg"/></a>
+<img src="https://img.shields.io/badge/DIM-Planned-lightgray.svg"/></a>
 
 <img src="https://img.shields.io/badge/DATA / READ-Planned-lightgray.svg"/></a>
 
