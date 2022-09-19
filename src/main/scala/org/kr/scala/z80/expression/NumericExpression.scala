@@ -2,7 +2,9 @@ package org.kr.scala.z80.expression
 
 import org.kr.scala.z80.environment.Environment
 import org.kr.scala.z80.program.Variable
+
 import java.text.DecimalFormat
+import scala.language.implicitConversions
 import scala.util.Try
 
 abstract class NumericExpression extends Expression {
@@ -24,6 +26,7 @@ case class ExprNumber(numValue: Double) extends NumericExpression {
 
 object ExprNumber {
   def apply(bool:Boolean):ExprNumber = new ExprNumber(if(bool) -1 else 0)
+  implicit def fromDouble(num:Double):ExprNumber = new ExprNumber(num)
 }
 
 case class ExprVariable(variable: Variable) extends NumericExpression {
@@ -38,6 +41,7 @@ case class ExprVariable(variable: Variable) extends NumericExpression {
 
 object ExprVariable {
   def apply(varName:String):ExprVariable=new ExprVariable(Variable(varName))
+  implicit def fromString(varName:String):ExprVariable=new ExprVariable(Variable(varName))
 }
 
 case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression, operator: String) extends NumericExpression {

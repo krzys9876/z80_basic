@@ -1,10 +1,11 @@
 package org.kr.scala.z80.program.parser
 
 import org.kr.scala.z80.expression.StaticTextExpr
-import org.kr.scala.z80.program.{Line, LineNumber, NEXT, PRINT, REM, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, AssignmentBase, FOR, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
+//TODO: change all string matchers to be case insensitive AND convert all variable names to upper case
 abstract class BaseParser[T]() extends JavaTokenParsers {
   def result:Parser[T]
 
@@ -43,8 +44,9 @@ trait LineNumberParser extends CommonParser {
   def lineNumber:Parser[LineNumber] = integerNumber ^^ {num => LineNumber(num.toInt) }
 }
 
-trait StatementParser extends CommonParser with RemParser with PrintParser with NextParser {
-  def statement: Parser[Statement] = rem | print | next
+trait StatementParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
+  with LetParser {
+  def statement: Parser[Statement] = rem | print | for_ | next | let
 }
 
 trait RemParser extends CommonParser {
@@ -70,4 +72,26 @@ trait NextParser extends CommonParser with VariableParser {
   def next:Parser[NEXT] =
     "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(v))} |
       "NEXT" ~ emptyString ^^ {_ => NEXT()}
+}
+
+trait ForParser extends CommonParser with VariableParser with AssignmentParser {
+  def for_ :Parser[FOR] =
+    "FOR" ~ numericAssignment ~ "TO" ~ numericExpression ~ "STEP" ~numericExpression  ^^ {
+      case _ ~ a ~ _ ~ to ~ _ ~ s => FOR(a,to,Some(s))} |
+    "FOR" ~ numericAssignment ~ "TO" ~ numericExpression ^^ { case _ ~ a ~ _ ~ to => FOR(a,to)}
+}
+
+trait AssignmentParser extends VariableParser with NumericExpressionParser {
+  def numericAssignment:Parser[NumericAssignment] = numVariable ~ "=" ~ numericExpression ^^ {
+    case v ~ _ ~ e => NumericAssignment(v,e)
+  }
+  //TODO: extend text assignment with text expressions (after it is implemented)
+  def textAssignment:Parser[Assignment] = textVariable ~ "=" ~ anyTextQuoted ^^ {
+    case v ~ _ ~ e => Assignment(v,StaticTextExpr(e))
+  }
+}
+
+trait LetParser extends AssignmentParser {
+  def let:Parser[LET] = (numericAssignment | textAssignment) ^^ {a => LET(a)} |
+    "LET" ~ (numericAssignment | textAssignment) ^^ {case _ ~ a => LET(a)}
 }

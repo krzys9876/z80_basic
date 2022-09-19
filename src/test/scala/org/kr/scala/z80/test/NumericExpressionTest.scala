@@ -5,12 +5,14 @@ import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, Exp
 import org.kr.scala.z80.program.Variable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
+import org.kr.scala.z80.expression.ExprNumber._
+import org.kr.scala.z80.expression.ExprVariable._
 
 class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("evaluate simple numeric expression") {
     Scenario("evaluate static number") {
       Given("expressions representing static numbers")
-      val e = List(ExprNumber(0.0), ExprNumber(-1), ExprNumber(1234.5678), ExprNumber(1234567890.1234567890))
+      val e = List[ExprNumber](0.0, -1, 1234.5678, 1234567890.1234567890)
       When("evaluated")
       val env = Environment.empty
       val eVals = e.map(_.valueNum(env).get)
@@ -19,12 +21,12 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("evaluate existing variable") {
       Given("expressions representing variables")
-      val e = List(ExprVariable("A"), ExprVariable("ASDF"), ExprVariable("QWERTY"))
+      val e = List[ExprVariable]("A", "ASDF", "QWERTY")
       And("variables exist in environment")
       val env = Environment.empty
-        .setVariable(Variable("A"), BigDecimal(0.123))
-        .setVariable(Variable("ASDF"), BigDecimal(-987654321))
-        .setVariable(Variable("QWERTY"), BigDecimal(321.123))
+        .setVariable("A", BigDecimal(0.123))
+        .setVariable("ASDF", BigDecimal(-987654321))
+        .setVariable("QWERTY", BigDecimal(321.123))
       When("evaluated")
       val eVals = e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -35,7 +37,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val e = ExprVariable("B")
       And("variable does not exist in environment")
       val env = Environment.empty
-        .setVariable(Variable("A"), BigDecimal(1.0))
+        .setVariable("A", BigDecimal(1.0))
       When("evaluated")
       val eVal = e.valueNum(env)
       val eErr = e.evaluate(env)
@@ -48,19 +50,19 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate binary operations (numbers only)") {
       Given("expressions representing binary operations (e.g. a+b etc.)")
       val e=List(
-        ExprOperation.plus(ExprNumber(1),ExprNumber(2)),
-        ExprOperation.minus(ExprNumber(8),ExprNumber(10)),
-        ExprOperation.mul(ExprNumber(5),ExprNumber(8)),
-        ExprOperation.div(ExprNumber(10),ExprNumber(4)),
-        ExprOperation.pow(ExprNumber(2),ExprNumber(8)),
-        ExprOperation.eq(ExprNumber(3),ExprNumber(3)),
-        ExprOperation.ne(ExprNumber(4),ExprNumber(4)),
-        ExprOperation.gt(ExprNumber(5),ExprNumber(4)),
-        ExprOperation.lt(ExprNumber(8),ExprNumber(2)),
-        ExprOperation.ge(ExprNumber(1),ExprNumber(-1)),
-        ExprOperation.le(ExprNumber(2),ExprNumber(1)),
-        ExprOperation.or(ExprNumber(0x4AAA),ExprNumber(0x1555)),
-        ExprOperation.and(ExprNumber(0x6CC6),ExprNumber(0x4888))
+        ExprOperation.plus(1,2),
+        ExprOperation.minus(8,10),
+        ExprOperation.mul(5,8),
+        ExprOperation.div(10,4),
+        ExprOperation.pow(2,8),
+        ExprOperation.eq(3,3),
+        ExprOperation.ne(4,4),
+        ExprOperation.gt(5,4),
+        ExprOperation.lt(8,2),
+        ExprOperation.ge(1,-1),
+        ExprOperation.le(2,1),
+        ExprOperation.or(0x4AAA,0x1555),
+        ExprOperation.and(0x6CC6,0x4888)
       )
       val env=Environment.empty
       When("evaluated")
@@ -71,9 +73,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate incorrect binary operations (numbers only)") {
       Given("expressions representing binary operations (e.g. a+b etc.)")
       val e=List(
-        ExprOperation.div(ExprNumber(10),ExprNumber(0)),
-        ExprOperation.or(ExprNumber(0x8000),ExprNumber(0x0001)),
-        ExprOperation.and(ExprNumber(0x1111),ExprNumber(0x8080))
+        ExprOperation.div(10,0),
+        ExprOperation.or(0x8000,0x0001),
+        ExprOperation.and(0x1111,0x8080)
       )
       val env=Environment.empty
       When("evaluated")
@@ -86,22 +88,22 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate binary operations (numbers and variables)") {
       Given("expressions representing binary operations (e.g. a+b etc.)")
       val e=List(
-        ExprOperation.plus(ExprNumber(1),ExprVariable("A")),
-        ExprOperation.minus(ExprNumber(126),ExprVariable("A")),
-        ExprOperation.mul(ExprVariable("A"),ExprNumber(2)),
-        ExprOperation.div(ExprVariable("A"),ExprNumber(2)),
-        ExprOperation.pow(ExprVariable("A"),ExprNumber(2)),
-        ExprOperation.eq(ExprVariable("A"),ExprVariable("A")),
-        ExprOperation.ne(ExprVariable("A"),ExprVariable("A")),
-        ExprOperation.gt(ExprVariable("A"),ExprNumber(100)),
-        ExprOperation.le(ExprVariable("A"),ExprNumber(100)),
-        ExprOperation.ge(ExprNumber(100),ExprVariable("A")),
-        ExprOperation.le(ExprNumber(100),ExprVariable("A")),
-        ExprOperation.or(ExprVariable("A"),ExprNumber(0x80)),
-        ExprOperation.and(ExprVariable("A"),ExprNumber(0x22))
+        ExprOperation.plus(1,"A"),
+        ExprOperation.minus(126,"A"),
+        ExprOperation.mul("A",2),
+        ExprOperation.div("A",2),
+        ExprOperation.pow("A",2),
+        ExprOperation.eq("A","A"),
+        ExprOperation.ne("A","A"),
+        ExprOperation.gt("A",100),
+        ExprOperation.le("A",100),
+        ExprOperation.ge(100,"A"),
+        ExprOperation.le(100,"A"),
+        ExprOperation.or("A",0x80),
+        ExprOperation.and("A",0x22)
       )
       val env=Environment.empty
-        .setVariable(Variable("A"),BigDecimal(127))
+        .setVariable("A",BigDecimal(127))
       When("evaluated")
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -109,9 +111,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("evaluate binary operation for non-existing variable)") {
       Given("expression representing binary operation with a non-existing variable")
-      val e=ExprOperation.plus(ExprNumber(1),ExprVariable("X"))
+      val e=ExprOperation.plus(1,"X")
       val env=Environment.empty
-        .setVariable(Variable("Y"),BigDecimal(1))
+        .setVariable("Y",BigDecimal(1))
       When("evaluated")
       val eVal=e.valueNum(env)
       val eErr=e.evaluate(env)
@@ -122,12 +124,12 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate functions (numbers only)") {
       Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
       val e=List(
-        ExprFunction.neg(ExprNumber(1)),
-        ExprFunction.sin(ExprNumber(0)),
-        ExprFunction.cos(ExprNumber(0)),
-        ExprFunction.abs(ExprNumber(-1.23)),
-        ExprFunction.abs(ExprNumber(2.34)),
-        ExprFunction.not(ExprNumber(0x55)), // bitwise not
+        ExprFunction.neg(1),
+        ExprFunction.sin(0),
+        ExprFunction.cos(0),
+        ExprFunction.abs(-1.23),
+        ExprFunction.abs(2.34),
+        ExprFunction.not(0x55), // bitwise not
       )
       val env=Environment.empty
       When("evaluated")
@@ -138,20 +140,20 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate functions (variables)") {
       Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
       val e=List(
-        ExprFunction.neg(ExprVariable("A")),
-        ExprFunction.sin(ExprVariable("B")),
-        ExprFunction.cos(ExprVariable("C")),
-        ExprFunction.neg(ExprVariable("D")),
-        ExprFunction.abs(ExprVariable("E")),
-        ExprFunction.not(ExprVariable("F")), // bitwise not
+        ExprFunction.neg("A"),
+        ExprFunction.sin("B"),
+        ExprFunction.cos("C"),
+        ExprFunction.neg("D"),
+        ExprFunction.abs("E"),
+        ExprFunction.not("F"), // bitwise not
       )
       val env=Environment.empty
-        .setVariable(Variable("A"),BigDecimal(-10))
-        .setVariable(Variable("B"),BigDecimal(0))
-        .setVariable(Variable("C"),BigDecimal(0))
-        .setVariable(Variable("D"),BigDecimal(-3.2))
-        .setVariable(Variable("E"),BigDecimal(4.3))
-        .setVariable(Variable("F"),BigDecimal(0xAA))
+        .setVariable("A",BigDecimal(-10))
+        .setVariable("B",BigDecimal(0))
+        .setVariable("C",BigDecimal(0))
+        .setVariable("D",BigDecimal(-3.2))
+        .setVariable("E",BigDecimal(4.3))
+        .setVariable("F",BigDecimal(0xAA))
       When("evaluated")
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -160,7 +162,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate incorrect functions (numbers only)") {
       Given("expressions representing functions (e.g. SIN, COS, negation etc.)")
       val e=List(
-        ExprFunction.not(ExprNumber(0xEEEE)),
+        ExprFunction.not(0xEEEE),
       )
       val env=Environment.empty
       When("evaluated")
@@ -197,19 +199,19 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprOperation.mul(
           ExprOperation.plus(
             ExprNumber(-1),
-            ExprFunction.neg(ExprVariable("V3"))),
+            ExprFunction.neg("V3")),
           ExprOperation.minus(
             ExprNumber(-5),
             ExprNumber(-8))),
         ExprOperation.minus(
-          ExprOperation.pow(ExprVariable("V2"),
-            ExprFunction.abs(ExprVariable("V3"))),
+          ExprOperation.pow("V2",
+            ExprFunction.abs("V3")),
           ExprVariable("V4")))
       And("variables exists in environment")
       val env=Environment.empty
-        .setVariable(Variable("V2"),BigDecimal(2))
-        .setVariable(Variable("V3"),BigDecimal(-3))
-        .setVariable(Variable("V4"),BigDecimal(4))
+        .setVariable("V2",BigDecimal(2))
+        .setVariable("V3",BigDecimal(-3))
+        .setVariable("V4",BigDecimal(4))
       When("evaluated")
       val eVal=e.valueNum(env).get
       Then("return correct numbers")
@@ -218,12 +220,12 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate relational operators") {
       Given("expressions representing relational operators (> < = <> >= <=)")
       val e=List(
-        ExprOperation.eq(ExprNumber(1),ExprNumber(2)),
-        ExprOperation.ne(ExprNumber(1),ExprNumber(2)),
-        ExprOperation.gt(ExprNumber(2),ExprNumber(2)),
-        ExprOperation.lt(ExprNumber(1),ExprNumber(2)),
-        ExprOperation.ge(ExprNumber(1),ExprNumber(2)),
-        ExprOperation.le(ExprNumber(2),ExprNumber(2))
+        ExprOperation.eq(1,2),
+        ExprOperation.ne(1,2),
+        ExprOperation.gt(2,2),
+        ExprOperation.lt(1,2),
+        ExprOperation.ge(1,2),
+        ExprOperation.le(2,2)
       )
       val env=Environment.empty
       When("evaluated")
@@ -234,15 +236,15 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("evaluate logical functions") {
       Given("expressions representing logical functions (not, and, or)")
       val e=List(
-        ExprFunction.not(ExprOperation.eq(ExprNumber(1),ExprNumber(1))),
-        ExprOperation.and(ExprNumber(-1),ExprNumber(-1)),
-        ExprOperation.or(ExprNumber(-1),ExprNumber(0)),
+        ExprFunction.not(ExprOperation.eq(1,1)),
+        ExprOperation.and(-1,-1),
+        ExprOperation.or(-1,0),
         ExprOperation.or(
-          ExprOperation.gt(ExprNumber(1),ExprNumber(2)),
-          ExprOperation.gt(ExprNumber(2),ExprNumber(1))),
+          ExprOperation.gt(1,2),
+          ExprOperation.gt(2,1)),
         ExprOperation.and(
-          ExprOperation.gt(ExprNumber(3),ExprNumber(1)),
-          ExprOperation.lt(ExprNumber(2),ExprNumber(1)))
+          ExprOperation.gt(3,1),
+          ExprOperation.lt(2,1))
       )
       val env=Environment.empty
       When("evaluated")

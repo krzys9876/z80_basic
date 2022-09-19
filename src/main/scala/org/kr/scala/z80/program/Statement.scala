@@ -102,7 +102,7 @@ case class REM(comment: String) extends Statement {
   override def list: String = f"REM $comment"
 }
 
-case class LET(assignment: Assignment) extends Statement {
+case class LET(assignment: AssignmentBase) extends Statement {
   // assign a value to a variable
   override def execute(program: Program, environment: Environment): Environment = {
     assignment.expression match {
