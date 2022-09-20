@@ -122,9 +122,9 @@ case class LET(assignment: AssignmentBase) extends Statement {
       case num : NumericExpression =>
         num.valueNum(environment) match {
           case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
-          case Some(value)=>environment.setVariable(assignment.variable, value)
+          case Some(value)=>environment.setValue(assignment.variable, value)
         }
-      case text : TextExpression => environment.setVariable(assignment.variable, text.valueText(environment))
+      case text : TextExpression => environment.setValue(assignment.variable, text.valueText(environment))
     }
   }
   override def list: String = f"LET ${assignment.variable.name} = ${assignment.expression.list}"

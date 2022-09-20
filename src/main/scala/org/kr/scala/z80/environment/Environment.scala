@@ -6,15 +6,15 @@ import scala.annotation.tailrec
 import scala.math.BigDecimal
 
 case class Environment(
-                   private val variables:Map[Variable,Any],
+                   private val variables:Variables,
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
                    console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
                    nextLineNum:Option[LineNumber]=None) {
-  def setVariable(variable: Variable,value:Any):Environment= copy(variables=variables ++ Map(variable->value))
-  def getValue(variable: Variable):Option[Any]=variables.get(variable)
-  def getValueAs[T](variable: Variable):Option[T]=variables.get(variable).map(_.asInstanceOf[T])
+  def setValue(variable: Variable, value:Any):Environment= copy(variables=variables.store(variable,value))
+  def getValue(variable: Variable):Option[Any]=variables.value(variable)
+  def getValueAs[T](variable: Variable):Option[T]=variables.value(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variable:Variable, line:LineNumber,
@@ -55,11 +55,11 @@ case class Environment(
     getCurrentLine match {
       case None=>setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
       case Some(lineNum)=>
-        setVariable(variable, value)
+        setValue(variable, value)
           .setForStack(variable,lineNum,start,end,step)
     }
 
-  def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setVariable(variable, nextValue)
+  def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setValue(variable, nextValue)
 
   def finishFor(program: Program, variable: Variable):Environment =
     getCurrentLine match {
@@ -128,5 +128,14 @@ case class Environment(
 }
 
 object Environment {
-  def empty:Environment=new Environment(Map(),ForStack.empty,LineStack.empty,Vector())
+  def empty:Environment=new Environment(Variables.empty,ForStack.empty,LineStack.empty,Vector())
+}
+
+case class Variables(values:Map[Variable,Any]) {
+  def value(variable: Variable):Option[Any]=values.get(variable)
+  def store(variable: Variable,value:Any):Variables= copy(values=values ++ Map(variable->value))
+}
+
+object Variables {
+  def empty:Variables=new Variables(Map())
 }

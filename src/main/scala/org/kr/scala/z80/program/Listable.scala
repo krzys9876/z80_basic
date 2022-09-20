@@ -50,7 +50,7 @@ object NumericAssignment {
   def apply(variable: Variable, expression: NumericExpression): NumericAssignment = new NumericAssignment(variable, expression)
 }
 
-case class Variable(name: String) extends Listable {
+case class Variable (name:String) extends Listable {
   override def list: String = name
 }
 

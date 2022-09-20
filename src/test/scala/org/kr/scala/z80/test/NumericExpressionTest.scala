@@ -23,9 +23,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val e = List[ExprVariable]("A", "ASDF", "QWERTY")
       And("variables exist in environment")
       val env = Environment.empty
-        .setVariable("A", BigDecimal(0.123))
-        .setVariable("ASDF", BigDecimal(-987654321))
-        .setVariable("QWERTY", BigDecimal(321.123))
+        .setValue("A", BigDecimal(0.123))
+        .setValue("ASDF", BigDecimal(-987654321))
+        .setValue("QWERTY", BigDecimal(321.123))
       When("evaluated")
       val eVals = e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -36,7 +36,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       val e = ExprVariable("B")
       And("variable does not exist in environment")
       val env = Environment.empty
-        .setVariable("A", BigDecimal(1.0))
+        .setValue("A", BigDecimal(1.0))
       When("evaluated")
       val eVal = e.valueNum(env)
       val eErr = e.evaluate(env)
@@ -102,7 +102,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprOperation.and("A",0x22)
       )
       val env=Environment.empty
-        .setVariable("A",BigDecimal(127))
+        .setValue("A",BigDecimal(127))
       When("evaluated")
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -112,7 +112,7 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
       Given("expression representing binary operation with a non-existing variable")
       val e=ExprOperation.plus(1,"X")
       val env=Environment.empty
-        .setVariable("Y",BigDecimal(1))
+        .setValue("Y",BigDecimal(1))
       When("evaluated")
       val eVal=e.valueNum(env)
       val eErr=e.evaluate(env)
@@ -150,12 +150,12 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         ExprFunction.not("F"), // bitwise not
       )
       val env=Environment.empty
-        .setVariable("A",BigDecimal(-10))
-        .setVariable("B",BigDecimal(0))
-        .setVariable("C",BigDecimal(0))
-        .setVariable("D",BigDecimal(-3.2))
-        .setVariable("E",BigDecimal(4.3))
-        .setVariable("F",BigDecimal(0xAA))
+        .setValue("A",BigDecimal(-10))
+        .setValue("B",BigDecimal(0))
+        .setValue("C",BigDecimal(0))
+        .setValue("D",BigDecimal(-3.2))
+        .setValue("E",BigDecimal(4.3))
+        .setValue("F",BigDecimal(0xAA))
       When("evaluated")
       val eVals=e.map(_.valueNum(env).get)
       Then("return correct numbers")
@@ -212,9 +212,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
           ExprVariable("V4")))
       And("variables exists in environment")
       val env=Environment.empty
-        .setVariable("V2",BigDecimal(2))
-        .setVariable("V3",BigDecimal(-3))
-        .setVariable("V4",BigDecimal(4))
+        .setValue("V2",BigDecimal(2))
+        .setValue("V3",BigDecimal(-3))
+        .setValue("V4",BigDecimal(4))
       When("evaluated")
       val eVal=e.valueNum(env).get
       Then("return correct numbers")
