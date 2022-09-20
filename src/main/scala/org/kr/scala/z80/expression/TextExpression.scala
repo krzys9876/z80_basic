@@ -8,7 +8,6 @@ abstract class TextExpression extends Expression {
   override def valueNum(env: Environment):Option[BigDecimal]=None
 }
 
-//TODO: add TextListExpr - a list of texts, e.g. PRINT "aaa", "bbb"
 case class StaticTextExpr(text:String) extends TextExpression {
   override def evaluate(env:Environment): Either[String, String]=Right(text)
   override def toString: String = f"TEXT:$text"

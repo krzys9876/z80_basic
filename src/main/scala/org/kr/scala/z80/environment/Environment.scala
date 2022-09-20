@@ -3,6 +3,7 @@ package org.kr.scala.z80.environment
 import org.kr.scala.z80.program.{LineNumber, Program, Variable}
 
 import scala.annotation.tailrec
+import scala.math.BigDecimal
 
 case class Environment(
                    private val variables:Map[Variable,Any],
@@ -26,9 +27,14 @@ case class Environment(
       ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
     forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
   }
-  def pushLine(nextLine:LineNumber):Environment= copy(lineStack=lineStack.push(getCurrentLine.get)).forceNextLine(nextLine)
-  def popLine(program: Program):Environment= copy(lineStack=lineStack.pop).setNextLineAfterPop(program)
-  private def setNextLineAfterPop(program: Program):Environment =
+  def pushLine(nextLine:LineNumber):Environment= {
+    getCurrentLine match {
+      case None => setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
+      case Some(line)=>copy(lineStack=lineStack.push(line)).forceNextLine(nextLine)
+    }
+  }
+  def popLine(program: Program):Environment= copy(lineStack=lineStack.pop).setNextLineAfterReturn(program)
+  private def setNextLineAfterReturn(program: Program):Environment =
     getCurrentLine match {
       case None => setExitCode(ExitCode.MISSING_RETURN_LINE)
       case Some(line) =>
@@ -45,7 +51,28 @@ case class Environment(
       case Some(forVar)=>getFor(forVar)
     }
 
-  //TODO: handle None result
+  def initFor(variable:Variable,value:BigDecimal,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
+    getCurrentLine match {
+      case None=>setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
+      case Some(lineNum)=>
+        setVariable(variable, value)
+          .setForStack(variable,lineNum,start,end,step)
+    }
+
+  def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setVariable(variable, nextValue)
+
+  def finishFor(program: Program, variable: Variable):Environment =
+    getCurrentLine match {
+      case None => setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
+      case Some(lineNum) =>
+        program.getNextFor(variable, lineNum) match {
+          case Some(nextLine) => this
+            .finishForStack(variable)
+            .forceNextLine(nextLine) // end of loop
+          case None => setExitCode(ExitCode.MISSING_NEXT)
+        }
+    }
+
   def getCurrentLine:Option[LineNumber]=lineStack.top
 
   def run(program:Program):Environment= {

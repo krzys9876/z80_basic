@@ -27,7 +27,7 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
         calculateNextValue(environment,state.step) match {
           case Some(nextValue) if nextValue > state.end => finishFor(program, environment)
           case Some(nextValue) => continueFor(environment,nextValue)
-          case None=>environment.setExitCode(ExitCode.FATAL_FOR_CANNOT_GET_VALUE)
+          case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
         }
     }
   }
@@ -38,22 +38,15 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
     }
   }
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
-    environment
-      .setVariable(assignment.variable, nextValue)
+    environment.continueFor(assignment.variable, nextValue)
 
   private def initFor(environment: Environment,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
-      environment
-        .setVariable(assignment.variable, assignment.expression.valueNum(environment).get)
-        .setForStack(assignment.variable, environment.getCurrentLine.get,start,end,step)
-
-  private def finishFor(program: Program,environment: Environment):Environment = {
-    program.getNextFor(assignment.variable, environment.getCurrentLine.get) match {
-      case Some(nextLine)=>environment
-        .finishForStack(assignment.variable)
-        .forceNextLine(nextLine) // end of loop
-      case None => environment.setExitCode(ExitCode.MISSING_NEXT)
-      }
+    assignment.expression.valueNum(environment) match {
+      case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
+      case Some(value)=>environment.initFor(assignment.variable,value,start,end,step)
     }
+
+  private def finishFor(program: Program,environment: Environment):Environment = environment.finishFor(program,assignment.variable)
   override def list: String = f"FOR ${assignment.variable.name} = " +
     f"${assignment.expression.list} TO ${endValue.list}" +
     step.map(s=>f" STEP ${s.list}").getOrElse("")
@@ -124,10 +117,13 @@ case class REM(comment: String) extends Statement {
 }
 
 case class LET(assignment: AssignmentBase) extends Statement {
-  // assign a value to a variable
   override def execute(program: Program, environment: Environment): Environment = {
     assignment.expression match {
-      case num : NumericExpression => environment.setVariable(assignment.variable, num.valueNum(environment).get)
+      case num : NumericExpression =>
+        num.valueNum(environment) match {
+          case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
+          case Some(value)=>environment.setVariable(assignment.variable, value)
+        }
       case text : TextExpression => environment.setVariable(assignment.variable, text.valueText(environment))
     }
   }
