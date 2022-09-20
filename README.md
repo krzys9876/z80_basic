@@ -34,7 +34,7 @@ This should be enough to run tic-tac-toe (10x10) game, which was a test program 
 
 <img src="https://img.shields.io/badge/Arithmetic expressions-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/Complex printing-Planned-lightgray.svg"/></a>
+<img src="https://img.shields.io/badge/Complex printing-Done-green.svg"/></a>
 
 <img src="https://img.shields.io/badge/Text expressions-Planned-lightgray.svg"/></a>
 

@@ -1,8 +1,8 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.expression.{ExprOperation, StaticTextExpr}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.program.parser.LineParser
-import org.kr.scala.z80.program.{FOR, GOSUB, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, REM, RETURN}
+import org.kr.scala.z80.program.{FOR, GOSUB, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -34,11 +34,33 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
   }
 
   Feature("parse PRINT line") {
+    Scenario("parse empty PRINT") {
+      assert(LineParser("10 PRINT").contains(Line(10,PRINT())))
+    }
     Scenario("parse PRINT with single text") {
       assert(LineParser("10 PRINT \"abc d \"").contains(Line(10,PRINT(StaticTextExpr("abc d ")))))
     }
     Scenario("parse PRINT with numeric expression") {
       assert(LineParser("10 PRINT 1+2").contains(Line(10,PRINT(ExprOperation.plus(1,2)))))
+    }
+    Scenario("parse PRINT with multiple tokens with EOL") {
+      assert(LineParser("10 PRINT 1+2,3;\" \"").contains(
+        Line(10,PRINT(Vector(
+          PrintableToken(ExprOperation.plus(1,2)),
+          PrintableToken(Some(","),ExprNumber(3)),
+          PrintableToken(Some(";"),StaticTextExpr(" ")))))))
+    }
+    Scenario("parse PRINT with multiple tokens without EOL") {
+      assert(LineParser("10 PRINT A,1;").contains(
+        Line(10,PRINT(Vector(
+          PrintableToken(ExprVariable("A")),
+          PrintableToken(Some(","),ExprNumber(1)),
+          PrintableToken(Some(";"),BlankTextExpr))))))
+      /*assert(LineParser("10 PRINT 2,3,").contains(
+        Line(10,PRINT(Vector(
+          PrintableToken(ExprNumber(2)),
+          PrintableToken(Some(","),ExprNumber(3)),
+          PrintableToken(Some(","),StaticTextExpr("")))))))*/
     }
   }
 
@@ -106,7 +128,7 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
   }
   Feature("parse IF line") {
     Scenario("parse IF") {
-      assert(LineParser("20 IF I=5 THEN PRINT 'X'").contains(Line(20, IF(ExprOperation.eq("I", 5), PRINT(StaticTextExpr("X"))))))
+      assert(LineParser("20 IF I=5 THEN PRINT \"X\"").contains(Line(20, IF(ExprOperation.eq("I", 5), PRINT(StaticTextExpr("X"))))))
     }
     Scenario("parse variants of IF with GOTO") {
       assert(LineParser("20 IF I=5 THEN GOTO 30").contains(Line(20, IF(ExprOperation.eq("I", 5), GOTO(30)))))

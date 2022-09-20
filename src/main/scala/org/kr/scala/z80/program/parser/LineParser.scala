@@ -1,7 +1,7 @@
 package org.kr.scala.z80.program.parser
 
-import org.kr.scala.z80.expression.StaticTextExpr
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.expression.{BlankTextExpr, Expression, StaticTextExpr}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -32,11 +32,12 @@ object LineParser {
 trait CommonParser extends JavaTokenParsers {
   def integerNumber: Parser[String] = """(\d+)""".r
   def anyText: Parser[String] = """(.*)""".r
-  def anyTextQuoted:Parser[String] = anyText ^^ {
-    case t if t.startsWith("'") && t.endsWith("'") => removeFirstAndLastCharacter(t)
-    case t if t.startsWith("\"") && t.endsWith("\"") => removeFirstAndLastCharacter(t)}
+  def anyTextQuoted:Parser[String] = stringLiteral ^^ stripQuotes
   def emptyString:Parser[String] = """(^$)""".r
-  private def removeFirstAndLastCharacter(t:String):String = t.substring(1,t.length-1)
+
+  private def stripFirstAndLastChar(t:String):String = t.substring(1,t.length-1)
+  private def stripQuotes(t:String):String =
+    if(t.startsWith("\"") && t.endsWith("\"")) stripFirstAndLastChar(t) else t
 }
 
 trait LineNumberParser extends CommonParser {
@@ -57,12 +58,18 @@ trait RemParser extends CommonParser {
   def rem:Parser[REM] = "REM" ~ (anyText | emptyString) ^^ {case _ ~ t => REM(t)}
 }
 
-trait StaticTextExprParser extends CommonParser {
-  def staticTextExpr:Parser[StaticTextExpr] = (anyTextQuoted | emptyString) ^^ StaticTextExpr
-}
+trait PrintParser extends CommonParser with NumericExpressionParser {
+  def print:Parser[PRINT] = "PRINT" ~ opt(tokens) ^^ {case _ ~ t => PRINT(t.getOrElse(List()).toVector)}
 
-trait PrintParser extends CommonParser with StaticTextExprParser with NumericExpressionParser {
-  def print:Parser[PRINT] = "PRINT" ~ (numericExpression | staticTextExpr) ^^ {case _ ~ t => PRINT(t)}
+  private def staticTextExpr:Parser[StaticTextExpr] = anyTextQuoted ^^ StaticTextExpr
+  private def token:Parser[Expression]=numericExpression | staticTextExpr
+  private def separator:Parser[String]=";" | ","
+  private def tokenSep:Parser[PrintableToken]=separator ~ token ^^ {case s ~ t => PrintableToken(Some(s),t)}
+  private def tokens:Parser[List[PrintableToken]]=
+    token ~ opt(rep(tokenSep)) ~ opt(rep(separator)) ^^ {case t ~ l ~ s =>
+      List(PrintableToken(None,t)) ++
+        l.getOrElse(List()) ++
+        s.getOrElse(List()).map(sep=>PrintableToken(Some(sep),BlankTextExpr))}
 }
 
 trait VariableParser extends CommonParser {

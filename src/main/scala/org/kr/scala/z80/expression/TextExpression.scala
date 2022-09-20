@@ -17,3 +17,10 @@ case class StaticTextExpr(text:String) extends TextExpression {
 
   override def list: String = f"\"$text\""
 }
+
+object BlankTextExpr extends TextExpression {
+  override def evaluate(env:Environment): Either[String, String]=Right("")
+  override def toString: String = f"(blank)"
+  override def valueText(env:Environment): String = ""
+  override def list: String = f"\"\""
+}

@@ -1,8 +1,10 @@
 package org.kr.scala.z80.program
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState, ForStatus}
-import org.kr.scala.z80.expression.{Expression, NumericExpression, TextExpression}
+import org.kr.scala.z80.expression.{BlankTextExpr, Expression, NumericExpression, TextExpression}
+
 import scala.math.BigDecimal
+import scala.util.Try
 
 trait Statement extends Listable {
   override def list: String
@@ -81,13 +83,37 @@ object NEXT {
   def apply(variable: Variable): NEXT = new NEXT(Some(variable))
 }
 
-case class PRINT(expression: Expression) extends Statement {
+case class PRINT(tokens: Vector[PrintableToken]) extends Statement {
   // print text to console
-  override def execute(program: Program, environment: Environment): Environment = {
+  override def execute(program: Program, environment: Environment): Environment =
     //TODO: decode missing value properly (return exit code if variable cannot be decoded)
-    environment.consolePrintln(expression.valueText(environment))
-  }
-  override def list: String = f"PRINT ${expression.list}"
+    environment.consolePrint(tokens.map(_.printableText(environment)).mkString("")+endOfLineOrNone)
+  private def lastToken:Option[PrintableToken] = Try(tokens.last).toOption
+  private def shouldSkipEol:Boolean=lastToken.exists(_.isEmptySeparator)
+  private def endOfLineOrNone:String=if(shouldSkipEol) "" else "\n"
+  override def list: String = f"PRINT ${tokens.map(_.list).mkString("")}"
+}
+
+object PRINT {
+  def apply(expression:Expression):PRINT=new PRINT(Vector(PrintableToken(None,expression)))
+  def apply():PRINT=new PRINT(Vector())
+}
+
+case class PrintableToken(prefixSeparator:Option[String],expression: Expression) extends Listable {
+  def printableText(environment: Environment):String = prefixToText+expression.valueText(environment)
+  private def prefixToText:String=
+    prefixSeparator match {
+      //TODO: handle proper tabulation - add tab sign and handle it via console object (to be implemented)
+      case Some(",")=>"\t"
+      case _ => ""
+    }
+  def isEmptySeparator:Boolean =
+    expression==BlankTextExpr && (prefixSeparator.contains(";") || prefixSeparator.contains(","))
+  override def list: String = prefixSeparator.getOrElse("")+expression.list
+}
+
+object PrintableToken {
+  def apply(expression: Expression):PrintableToken = new PrintableToken(None,expression)
 }
 
 case class REM(comment: String) extends Statement {

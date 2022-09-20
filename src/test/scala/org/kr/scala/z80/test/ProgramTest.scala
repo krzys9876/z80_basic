@@ -1,8 +1,8 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
-import org.kr.scala.z80.expression.{ExprNumber, ExprOperation, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, Program, REM, RETURN, Variable}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, StaticTextExpr}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -383,6 +383,66 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getCurrentLine.contains(LineNumber(70)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
       assert(environment.console == List("A\n", "subroutine\n", "B\n", "end\n"))
+    }
+  }
+  Feature("complex PRINT") {
+    Scenario("print without tokens") {
+      Given("empty print statement")
+      val program = new Program(Vector(
+        Line(10, PRINT(BlankTextExpr))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("blank line is printed")
+      assert(environment.console == List("\n"))
+    }
+    Scenario("print single token") {
+      Given("print statement with a single token")
+      val program = new Program(Vector(
+        Line(10, PRINT(StaticTextExpr("A")))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("single token is printed")
+      assert(environment.console == List("A\n"))
+    }
+    Scenario("print multiple tokens separated with ; or , with EOP") {
+      Given("print statements with multiple tokens separated with ; or ,")
+      And("not ended with ;")
+      val program = new Program(Vector(
+        Line(10, PRINT(Vector(
+          PrintableToken(StaticTextExpr("A")),
+          PrintableToken(Some(","),StaticTextExpr("B")),
+          PrintableToken(Some(";"),StaticTextExpr("C"))))
+      )))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("all tokens are printed with adequate separators (none or tab)")
+      And("with EOL")
+      assert(environment.console == List("A\tBC\n"))
+    }
+    Scenario("print multiple tokens token ; without EOP") {
+      Given("print statements with multiple tokens separated with ;")
+      And("ended with ;")
+      val program = new Program(Vector(
+        Line(10, PRINT(Vector(
+          PrintableToken(StaticTextExpr("A")),
+          PrintableToken(Some(","),StaticTextExpr("B")),
+          PrintableToken(Some(";"),BlankTextExpr)))),
+        Line(20, PRINT(Vector(
+          PrintableToken(StaticTextExpr("C")),
+          PrintableToken(Some(";"),StaticTextExpr("D")),
+          PrintableToken(Some(","),BlankTextExpr)))
+        )))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("all tokens are printed with adequate separators (none or tab)")
+      And("without EOL")
+      assert(environment.console == List("A\tB","CD\t"))
     }
   }
 }
