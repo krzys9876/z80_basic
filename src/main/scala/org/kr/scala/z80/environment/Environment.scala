@@ -23,6 +23,7 @@ case class Environment(
       case Left(code)=>setExitCode(code)
     }
   def getValue(variable: Variable):Option[Any]=variables.value(variable)
+  def getValue(variableCoordinates: VariableCoordinates):Option[Any]=variables.value(variableCoordinates)
   def getValueAs[T](variable: Variable):Option[T]=variables.value(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
@@ -142,6 +143,7 @@ object Environment {
 
 case class Variables(values:Map[VariableCoordinates,Any],dimensions:Map[Variable,Dimensions]) {
   def value(variable: Variable):Option[Any]=values.get(VariableCoordinates(variable))
+  def value(variableCoordinates: VariableCoordinates):Option[Any]=values.get(variableCoordinates)
 
   def store(variable: Variable, valueToStore:Any):Either[ExitCode,Variables]= {
     checkDimensions(variable) match {
