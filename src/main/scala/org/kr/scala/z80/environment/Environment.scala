@@ -131,11 +131,29 @@ object Environment {
   def empty:Environment=new Environment(Variables.empty,ForStack.empty,LineStack.empty,Vector())
 }
 
-case class Variables(values:Map[Variable,Any]) {
+case class Variables(values:Map[Variable,Any],dimensions:Map[Variable,Int]) {
   def value(variable: Variable):Option[Any]=values.get(variable)
-  def store(variable: Variable,value:Any):Variables= copy(values=values ++ Map(variable->value))
+  def store(variable: Variable,valueToStore:Any):Variables= copy(values=values ++ Map(variable->valueToStore))
+
+  def store2(variable: Variable,valueToStore:Any):Either[ExitCode,Variables]= {
+    checkDimensions(variable) match {
+      case Some(0) | None =>Right(copy(values=values ++ Map(variable->valueToStore)))
+      case _=>Left(ExitCode.INVALID_DIMENSIONALITY)
+    }
+  }
+  def store2(variable: Variable,valuesToStore:List[Any]):Either[ExitCode,Variables]= {
+    checkDimensions(variable) match {
+      case None =>
+        Right(store(variable,valuesToStore)
+          .copy(dimensions=dimensions ++ Map(variable->valuesToStore.length)))
+      case Some(d) if d==valuesToStore.length => Right(store(variable,valuesToStore))
+      case _=>Left(ExitCode.INVALID_DIMENSIONALITY)
+    }
+  }
+
+  private def checkDimensions(variable: Variable):Option[Int] = dimensions.get(variable)
 }
 
 object Variables {
-  def empty:Variables=new Variables(Map())
+  def empty:Variables=new Variables(Map(),Map())
 }
