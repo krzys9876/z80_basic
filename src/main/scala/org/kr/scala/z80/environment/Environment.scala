@@ -2,7 +2,6 @@ package org.kr.scala.z80.environment
 
 import org.kr.scala.z80.program.{LineNumber, Program, Variable}
 
-import java.util.AbstractMap.SimpleEntry
 import scala.annotation.tailrec
 import scala.math.BigDecimal
 
@@ -15,15 +14,15 @@ case class Environment(
                    nextLineNum:Option[LineNumber]=None) {
   def setValue(variable: Variable, value:Any):Environment=
     processVariables(variables.store(variable,value))
-  def setValue(variableCoords: VariableCoordinates, value:Any):Environment=
-    processVariables(variables.store(variableCoords,value))
+  def setValue(variableIndex: VariableIndex, value:Any):Environment=
+    processVariables(variables.store(variableIndex,value))
   private def processVariables(setValueResult:Either[ExitCode,Variables]):Environment =
     setValueResult match {
       case Right(vars)=>copy(variables=vars)
       case Left(code)=>setExitCode(code)
     }
   def getValue(variable: Variable):Option[Any]=variables.value(variable)
-  def getValue(variableCoordinates: VariableCoordinates):Option[Any]=variables.value(variableCoordinates)
+  def getValue(variableIndex: VariableIndex):Option[Any]=variables.value(variableIndex)
   def getValueAs[T](variable: Variable):Option[T]=variables.value(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
@@ -141,57 +140,62 @@ object Environment {
   def empty:Environment=new Environment(Variables.empty,ForStack.empty,LineStack.empty,Vector())
 }
 
-case class Variables(values:Map[VariableCoordinates,Any],dimensions:Map[Variable,Dimensions]) {
-  def value(variable: Variable):Option[Any]=values.get(VariableCoordinates(variable))
-  def value(variableCoordinates: VariableCoordinates):Option[Any]=values.get(variableCoordinates)
+case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Index]) {
+  def value(variable: Variable):Option[Any]=values.get(VariableIndex(variable))
+  def value(variableIndex: VariableIndex):Option[Any]=values.get(variableIndex)
 
   def store(variable: Variable, valueToStore:Any):Either[ExitCode,Variables]= {
     checkDimensions(variable) match {
-      case Some(d) if d==Dimensions.empty =>Right(storeValue(VariableCoordinates(variable),valueToStore))
-      case None =>Right(storeValue(VariableCoordinates(variable),valueToStore))
-      case _ =>Left(ExitCode.INVALID_DIMENSIONALITY)
+      case Some(d) if d==Index.empty =>Right(storeValue(VariableIndex(variable),valueToStore))
+      case None =>Right(storeValue(VariableIndex(variable),valueToStore))
+      case _ =>Left(ExitCode.INVALID_ARRAY_INDEX)
     }
   }
-  def store(variableCoords: VariableCoordinates, valueToStore:Any):Either[ExitCode,Variables]= {
-    checkDimensions(variableCoords.variable) match {
+  def store(variableIndex: VariableIndex, valueToStore:Any):Either[ExitCode,Variables]= {
+    checkDimensions(variableIndex.variable) match {
       case None =>
-        Right(storeValue(variableCoords,valueToStore)
-          .storeDimensions(variableCoords))
-      case Some(d) if variableCoords.coords.check(d) => Right(storeValue(variableCoords,valueToStore))
-      case _=>Left(ExitCode.INVALID_DIMENSIONALITY)
+        Right(storeValue(variableIndex,valueToStore)
+          .storeDimensions(variableIndex))
+      case Some(d) if variableIndex.index.fitsSize(d) => Right(storeValue(variableIndex,valueToStore))
+      case _=>Left(ExitCode.INVALID_ARRAY_INDEX)
     }
   }
-  private def storeValue(variable: VariableCoordinates,valueToStore:Any):Variables=
+  private def storeValue(variable: VariableIndex, valueToStore:Any):Variables=
     copy(values=values ++ Map(variable->valueToStore))
-  private def storeDimensions(variableCoords: VariableCoordinates):Variables=
-    copy(dimensions=dimensions ++ Map(variableCoords.variable-> Dimensions.blank(variableCoords.coords)))
-  private def checkDimensions(variable: Variable):Option[Dimensions] = dimensions.get(variable)
+  private def storeDimensions(variableIndex: VariableIndex):Variables=
+    copy(dimensions=dimensions ++ Map(variableIndex.variable-> Index.blank(variableIndex.index)))
+  private def checkDimensions(variable: Variable):Option[Index] = dimensions.get(variable)
 }
 
 object Variables {
   def empty:Variables=new Variables(Map(),Map())
 }
 
-case class VariableCoordinates(variable:Variable,coords:Dimensions)
+case class VariableIndex(variable:Variable, index:Index)
 
-object VariableCoordinates {
-  def apply(variable: Variable):VariableCoordinates = new VariableCoordinates(variable,Dimensions.empty)
+object VariableIndex {
+  def apply(variable: Variable):VariableIndex = new VariableIndex(variable,Index.empty)
 }
 
 // Contains a list of numbers representing size of ech dimension.
 // E.g.: (5,10) means first dimension is 5-elements long, second dimension is 10 elements long.
 // According to MS Basic documentation the default dimension size is 10, if not specified by DIM statement
-case class Dimensions(dimensions: List[Int]) {
-  //TODO: implement dimension check
-  def check(dimensions: Dimensions):Boolean = true
+case class Index(dimensions: List[Int]) {
+  def fitsSize(sizeIndex: Index):Boolean = {
+    sameLength(sizeIndex) && indexLessThanSize(sizeIndex)
+  }
+  private def sameLength(sizeIndex: Index):Boolean = length==sizeIndex.length
+  private def indexLessThanSize(sizeIndex: Index):Boolean =
+    dimensions.zip(sizeIndex.dimensions).forall({case(index,size)=>size>index && index>=0})
+
   def length:Int=dimensions.length
 }
 
-object Dimensions {
-  val DEFAULT_DIM:Int=10
-  def empty:Dimensions = new Dimensions(List())
-  def blank(dimensions: Dimensions):Dimensions = {
+object Index {
+  val DEFAULT_DIM_SIZE:Int=10
+  def empty:Index = new Index(List())
+  def blank(dimensions: Index):Index = {
     val dimLen=dimensions.length
-    new Dimensions(List.fill(dimLen)(DEFAULT_DIM))
+    new Index(List.fill(dimLen)(DEFAULT_DIM_SIZE))
   }
 }
