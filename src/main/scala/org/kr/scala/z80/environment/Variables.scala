@@ -1,10 +1,11 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{Index, VariableName, Variable}
+import org.kr.scala.z80.program.{Index, Variable, VariableName, VariableStatic}
+
 import scala.language.implicitConversions
 
-case class Variables(values:Map[Variable,Any], dimensions:Map[VariableName,Index]) {
-  def value(variable: VariableName):Option[Any]=values.get(Variable(variable))
+case class Variables(values:Map[VariableStatic,Any], dimensions:Map[VariableName,Index]) {
+  def value(variable: VariableName):Option[Any]=values.get(VariableStatic(variable))
   //TODO: convert Option to Either
   def value(variable: Variable, environment: Environment):Either[ExitCode,Any]= {
     variable.evaluateIndex(environment) match {
@@ -32,8 +33,8 @@ case class Variables(values:Map[Variable,Any], dimensions:Map[VariableName,Index
         }
     }
 
-  private def get(variable:Variable):Either[ExitCode,Any] =
-    values.get(variable) match {
+  private def get(variableStatic:VariableStatic):Either[ExitCode,Any] =
+    values.get(variableStatic) match {
       case None => Left(ExitCode.FATAL_CANNOT_GET_VALUE)
       case Some(v) => Right(v)
     }
