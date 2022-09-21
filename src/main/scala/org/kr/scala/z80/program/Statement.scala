@@ -13,7 +13,7 @@ trait Statement extends Listable {
 
 case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:Option[NumericExpression]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    environment.getFor(assignment.variableIndex) match {
+    environment.getFor(assignment.variable) match {
       case None =>
         val startVal=assignment.expression.valueNum(environment)
         val endVal=endValue.valueNum(environment)
@@ -32,22 +32,22 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
     }
   }
   private def calculateNextValue(environment: Environment,stepVal:BigDecimal):Option[BigDecimal] = {
-    environment.getValueAs[BigDecimal](assignment.variableIndex) match {
+    environment.getValueAs[BigDecimal](assignment.variable) match {
       case Left(_)=>None
       case Right(value)=> Some(value + stepVal)
     }
   }
   private def continueFor(environment: Environment, nextValue:BigDecimal):Environment =
-    environment.continueFor(assignment.variableIndex, nextValue)
+    environment.continueFor(assignment.variable, nextValue)
 
   private def initFor(environment: Environment,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
     assignment.expression.valueNum(environment) match {
       case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
-      case Some(value)=>environment.initFor(assignment.variableIndex,value,start,end,step)
+      case Some(value)=>environment.initFor(assignment.variable,value,start,end,step)
     }
 
-  private def finishFor(program: Program,environment: Environment):Environment = environment.finishFor(program,assignment.variableIndex)
-  override def list: String = f"FOR ${assignment.variableIndex.variable.name} = " +
+  private def finishFor(program: Program,environment: Environment):Environment = environment.finishFor(program,assignment.variable)
+  override def list: String = f"FOR ${assignment.variable.variable.name} = " +
     f"${assignment.expression.list} TO ${endValue.list}" +
     step.map(s=>f" STEP ${s.list}").getOrElse("")
 }
@@ -60,20 +60,20 @@ object FOR {
 //TODO: replace variable with optional list of variables
 // Empty list means that NEXT terminates the most recent FOR loop)
 // Multiple variables are treated as consecutive NEXT statements
-case class NEXT(variable: Option[VariableIndex]=None) extends Statement {
+case class NEXT(variable: Option[Variable]=None) extends Statement {
   override def execute(program: Program, environment: Environment): Environment =
     environment.getFor(variable) match {
       case Some(ForState(forVariable,_,_,_,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
       case Some(ForState(_,_,_,_, forLine, _)) => environment.forceNextLine(forLine)
       case None => environment.setExitCode(ExitCode.MISSING_FOR)
     }
-  def isNextFor(checkVariableIndex:VariableIndex):Boolean =
-    variable.isEmpty || variable.contains(checkVariableIndex)
+  def isNextFor(checkVariable:Variable):Boolean =
+    variable.isEmpty || variable.contains(checkVariable)
   override def list: String = f"NEXT"+variable.map(" "+_.list).getOrElse("")
 }
 
 object NEXT {
-  def apply(variable: VariableIndex): NEXT = new NEXT(Some(variable))
+  def apply(variable: Variable): NEXT = new NEXT(Some(variable))
 }
 
 case class PRINT(tokens: Vector[PrintableToken]) extends Statement {
@@ -122,12 +122,12 @@ case class LET(assignment: AssignmentBase) extends Statement {
       case num : NumericExpression =>
         num.valueNum(environment) match {
           case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
-          case Some(value)=>environment.setValue(assignment.variableIndex, value)
+          case Some(value)=>environment.setValue(assignment.variable, value)
         }
-      case text : TextExpression => environment.setValue(assignment.variableIndex, text.valueText(environment))
+      case text : TextExpression => environment.setValue(assignment.variable, text.valueText(environment))
     }
   }
-  override def list: String = f"LET ${assignment.variableIndex.list} = ${assignment.expression.list}"
+  override def list: String = f"LET ${assignment.variable.list} = ${assignment.expression.list}"
 }
 
 case class GOTO(toLine:LineNumber) extends Statement {

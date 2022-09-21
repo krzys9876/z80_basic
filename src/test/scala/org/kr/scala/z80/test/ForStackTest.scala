@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{ForStack, ForState, ForStatus}
 import org.kr.scala.z80.environment
-import org.kr.scala.z80.program.{LineNumber, Variable}
+import org.kr.scala.z80.program.{LineNumber, VariableName}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 

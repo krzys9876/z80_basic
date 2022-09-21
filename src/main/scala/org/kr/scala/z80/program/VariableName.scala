@@ -5,13 +5,16 @@ import org.kr.scala.z80.expression.{ExprNumber, NumericExpression}
 
 import scala.language.implicitConversions
 
-case class Variable (name:String) extends Listable {
+case class VariableName(name:String) extends Listable {
   override def list: String = name
 }
 
-case class ExprIndex(index:List[NumericExpression]) extends Listable {
+/** Encapsulates a list of numeric expressions representing dynamic index of an array
+ * It is used in a program definition
+ */
+case class ExprIndex(num:List[NumericExpression]) extends Listable {
   def toIndex(environment: Environment):Either[String,Index]={
-    val evaluated=index.map(_.evaluate(environment))
+    val evaluated=num.map(_.evaluate(environment))
     val errors=evaluated.filter(_.isLeft).map(_.swap.toOption.get)
     val correct=evaluated.filter(_.isRight).map(_.toOption.get).map(_.toInt)
 
@@ -19,7 +22,7 @@ case class ExprIndex(index:List[NumericExpression]) extends Listable {
     else Left(errors.mkString(";"))
   }
 
-  override def list: String = if(index.isEmpty) "" else "("+index.map(_.list).mkString(",")+")"
+  override def list: String = if(num.isEmpty) "" else "("+num.map(_.list).mkString(",")+")"
 }
 
 object ExprIndex {
@@ -27,8 +30,11 @@ object ExprIndex {
   def static(staticList:List[Int]):ExprIndex=new ExprIndex(staticList.map(ExprNumber(_)))
 }
 
-case class VariableIndex(variable:Variable, index:ExprIndex) extends Listable {
-  def length:Int=index.index.length
+/** Joins a variable name with its index (empty for simple variables, defined for arrays).
+ * Index consists of a list of numeric expressions to enable dynamic array reference.
+ */
+case class Variable(variable:VariableName, index:ExprIndex) extends Listable {
+  def length:Int=index.num.length
   def evaluateIndex(environment: Environment):Either[ExitCode,Index] =
     index.toIndex(environment) match {
       case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
@@ -38,18 +44,18 @@ case class VariableIndex(variable:Variable, index:ExprIndex) extends Listable {
   override def list: String = f"${variable.list}${index.list}"
 }
 
-object VariableIndex {
-  def apply(variable: Variable):VariableIndex = new VariableIndex(variable,ExprIndex.empty)
-  def apply(name:String,index:ExprIndex):VariableIndex = new VariableIndex(Variable(name),index)
-  implicit def fromString(name:String):VariableIndex = VariableIndex(Variable(name))
-  def asStatic(variable: Variable, index:Index):VariableIndex =
-    new VariableIndex(variable, ExprIndex(index.dimensions.map(dim=>ExprNumber(dim))))
+object Variable {
+  def apply(variable: VariableName):Variable = new Variable(variable,ExprIndex.empty)
+  def apply(name:String,index:ExprIndex):Variable = new Variable(VariableName(name),index)
+  implicit def fromString(name:String):Variable = Variable(VariableName(name))
+  def asStatic(variable: VariableName, index:Index):Variable =
+    new Variable(variable, ExprIndex(index.dimensions.map(dim=>ExprNumber(dim))))
 }
 
-
-// Contains a list of numbers representing size of ech dimension.
-// E.g.: (5,10) means first dimension is 5-elements long, second dimension is 10 elements long.
-// According to MS Basic documentation the default dimension size is 10, if not specified by DIM statement
+/** Contains a list of numbers representing size of ech dimension.
+ * E.g.: (5,10) means first dimension is 5-elements long, second dimension is 10 elements long.
+ * According to MS Basic documentation the default dimension size is 10, if not specified by DIM statement
+ */
 case class Index(dimensions: List[Int]) extends Listable {
   def fitsSize(sizeIndex: Index):Boolean = {
     sameLength(sizeIndex) && indexLessThanSize(sizeIndex)

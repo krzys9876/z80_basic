@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, Variable, VariableIndex}
+import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, VariableName, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -59,41 +59,41 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("Run assignment to an array") {
       Given("a program consisting of assignment lines with arrays")
       val program = new Program(Vector(
-        Line(30, LET(Assignment(VariableIndex("A",ExprIndex.static(List(1,2))), 100))),
-        Line(31, LET(Assignment(VariableIndex("A",ExprIndex.static(List(1,3))), 200))),
-        Line(32, LET(Assignment(VariableIndex("A",ExprIndex.static(List(1,2))), 101))), // the same index!
-        Line(33, LET(Assignment(VariableIndex("B",ExprIndex.static(List(1))), 10.12))),
-        Line(34, LET(Assignment(VariableIndex("B",ExprIndex.static(List(2))), 20.22))),
-        Line(35, LET(Assignment(VariableIndex("B",ExprIndex.static(List(1))), 11.12))), // the same index!
-        //NOTE: due to implicit conversion from string to VariableIndex a string value must be StaticTextExpr, not just a string
-        Line(36, LET(Assignment(VariableIndex("C$",ExprIndex.static(List(1,2,3,4))), StaticTextExpr("ABC")))),
-        Line(37, LET(Assignment(VariableIndex("C$",ExprIndex.static(List(4,5,6,7))), StaticTextExpr("XYZ")))),
-        Line(38, LET(Assignment(VariableIndex("C$",ExprIndex.static(List(1,2,3,4))), StaticTextExpr("abc")))), // the same index!
+        Line(30, LET(Assignment(Variable("A",ExprIndex.static(List(1,2))), 100))),
+        Line(31, LET(Assignment(Variable("A",ExprIndex.static(List(1,3))), 200))),
+        Line(32, LET(Assignment(Variable("A",ExprIndex.static(List(1,2))), 101))), // the same index!
+        Line(33, LET(Assignment(Variable("B",ExprIndex.static(List(1))), 10.12))),
+        Line(34, LET(Assignment(Variable("B",ExprIndex.static(List(2))), 20.22))),
+        Line(35, LET(Assignment(Variable("B",ExprIndex.static(List(1))), 11.12))), // the same index!
+        //NOTE: due to implicit conversion from string to Variable a string value must be StaticTextExpr, not just a string
+        Line(36, LET(Assignment(Variable("C$",ExprIndex.static(List(1,2,3,4))), StaticTextExpr("ABC")))),
+        Line(37, LET(Assignment(Variable("C$",ExprIndex.static(List(4,5,6,7))), StaticTextExpr("XYZ")))),
+        Line(38, LET(Assignment(Variable("C$",ExprIndex.static(List(1,2,3,4))), StaticTextExpr("abc")))), // the same index!
       ))
       When("program is executed")
       val initialEnvironment = Environment.empty
       val environment = initialEnvironment.run(program)
       Then("environment contains arrays with expected values")
-      assert(environment.getValue(VariableIndex("A",ExprIndex.static(List(1,2)))).contains(101))
-      assert(environment.getValue(VariableIndex("A",ExprIndex.static(List(1,3)))).contains(200))
-      assert(environment.getValue(VariableIndex("B",ExprIndex.static(List(1)))).contains(11.12))
-      assert(environment.getValue(VariableIndex("B",ExprIndex.static(List(2)))).contains(20.22))
-      assert(environment.getValue(VariableIndex("C$",ExprIndex.static(List(1,2,3,4)))).contains("abc"))
-      assert(environment.getValue(VariableIndex("C$",ExprIndex.static(List(4,5,6,7)))).contains("XYZ"))
+      assert(environment.getValue(Variable("A",ExprIndex.static(List(1,2)))).contains(101))
+      assert(environment.getValue(Variable("A",ExprIndex.static(List(1,3)))).contains(200))
+      assert(environment.getValue(Variable("B",ExprIndex.static(List(1)))).contains(11.12))
+      assert(environment.getValue(Variable("B",ExprIndex.static(List(2)))).contains(20.22))
+      assert(environment.getValue(Variable("C$",ExprIndex.static(List(1,2,3,4)))).contains("abc"))
+      assert(environment.getValue(Variable("C$",ExprIndex.static(List(4,5,6,7)))).contains("XYZ"))
     }
     Scenario("Assign a value of and array to a variable") {
       Given("a program consisting of assignment lines with arrays")
       val program = new Program(Vector(
         Line(10, LET(Assignment("V",12.34))),
-        Line(20, LET(Assignment(VariableIndex("AR",ExprIndex.static(List(4,2))), 99.88))),
-        Line(30, LET(Assignment("V",ExprVariable(VariableIndex("AR",ExprIndex.static(List(4,2))))))),
-        Line(40, LET(Assignment("W",ExprVariable(VariableIndex("AR",ExprIndex.static(List(4,2)))))))
+        Line(20, LET(Assignment(Variable("AR",ExprIndex.static(List(4,2))), 99.88))),
+        Line(30, LET(Assignment("V",ExprVariable(Variable("AR",ExprIndex.static(List(4,2))))))),
+        Line(40, LET(Assignment("W",ExprVariable(Variable("AR",ExprIndex.static(List(4,2)))))))
       ))
       When("program is executed")
       val initialEnvironment = Environment.empty
       val environment = initialEnvironment.run(program)
       Then("environment contains arrays with expected values")
-      assert(environment.getValue(VariableIndex("AR",ExprIndex.static(List(4,2)))).contains(99.88))
+      assert(environment.getValue(Variable("AR",ExprIndex.static(List(4,2)))).contains(99.88))
       assert(environment.getValue("V").contains(99.88))
       assert(environment.getValue("W").contains(99.88))
     }

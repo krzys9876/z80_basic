@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
-import org.kr.scala.z80.program.{ExprIndex, VariableIndex}
+import org.kr.scala.z80.program.{ExprIndex, Variable}
 
 trait NumericExpressionParser extends CommonParser with VariableParser {
   // Output type
@@ -43,8 +43,8 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
   private def factor8: PN = factor7 ~ rep(operations7) ^^ {case f ~ op => applyOperations(f, op) }
 
   //Public building blocks
-  def numArray:Parser[VariableIndex]=numVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
-  def textArray:Parser[VariableIndex]=textVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
+  def numArray:Parser[Variable]=numVariableName ~ index ^^ {case n ~ i =>Variable(n,i)}
+  def textArray:Parser[Variable]=textVariableName ~ index ^^ {case n ~ i =>Variable(n,i)}
   //Private building blocks for hierarchy of operations
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
   private def index:Parser[ExprIndex]="(" ~> rep1sep(numericExpression,",") <~ ")" ^^ {l => ExprIndex(l)}

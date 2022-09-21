@@ -1,48 +1,48 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{Index, Variable, VariableIndex}
+import org.kr.scala.z80.program.{Index, VariableName, Variable}
 import scala.language.implicitConversions
 
-case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Index]) {
-  def value(variable: Variable):Option[Any]=values.get(VariableIndex(variable))
+case class Variables(values:Map[Variable,Any], dimensions:Map[VariableName,Index]) {
+  def value(variable: VariableName):Option[Any]=values.get(Variable(variable))
   //TODO: convert Option to Either
-  def value(variableIndex: VariableIndex, environment: Environment):Either[ExitCode,Any]= {
-    variableIndex.evaluateIndex(environment) match {
+  def value(variable: Variable, environment: Environment):Either[ExitCode,Any]= {
+    variable.evaluateIndex(environment) match {
       case Left(code) => Left(code)
       case Right(index) =>
-        checkDimensions(variableIndex.variable) match {
+        checkDimensions(variable.variable) match {
           case Some(dim) if index.fitsSize(dim) =>
-            get(VariableIndex.asStatic(variableIndex.variable,index))
+            get(Variable.asStatic(variable.variable,index))
           case None => Left(ExitCode.INVALID_ARRAY_INDEX)
           case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
   }
 
-  def store(variableIndex: VariableIndex, valueToStore:Any, environment: Environment):Either[ExitCode,Variables]=
-    variableIndex.evaluateIndex(environment) match {
+  def store(variable: Variable, valueToStore:Any, environment: Environment):Either[ExitCode,Variables]=
+    variable.evaluateIndex(environment) match {
       case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
       case Right(index) =>
-        checkDimensions(variableIndex.variable) match {
+        checkDimensions(variable.variable) match {
           case None =>
-            Right(storeValue(variableIndex, index, valueToStore)
-              .storeDimensions(variableIndex))
-          case Some(dim) if index.fitsSize(dim) => Right(storeValue(variableIndex, index, valueToStore))
+            Right(storeValue(variable, index, valueToStore)
+              .storeDimensions(variable))
+          case Some(dim) if index.fitsSize(dim) => Right(storeValue(variable, index, valueToStore))
           case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
 
-  private def get(variableIndex:VariableIndex):Either[ExitCode,Any] =
-    values.get(variableIndex) match {
+  private def get(variable:Variable):Either[ExitCode,Any] =
+    values.get(variable) match {
       case None => Left(ExitCode.FATAL_CANNOT_GET_VALUE)
       case Some(v) => Right(v)
     }
 
-  private def storeValue(variable: VariableIndex, evaluatedIndex:Index, valueToStore:Any):Variables=
-    copy(values=values ++ Map(VariableIndex.asStatic(variable.variable,evaluatedIndex) -> valueToStore))
-  private def storeDimensions(variableIndex: VariableIndex):Variables=
-    copy(dimensions=dimensions ++ Map(variableIndex.variable-> Index.blank(variableIndex.length)))
-  private def checkDimensions(variable: Variable):Option[Index] = dimensions.get(variable)
+  private def storeValue(variable: Variable, evaluatedIndex:Index, valueToStore:Any):Variables=
+    copy(values=values ++ Map(Variable.asStatic(variable.variable,evaluatedIndex) -> valueToStore))
+  private def storeDimensions(variable: Variable):Variables=
+    copy(dimensions=dimensions ++ Map(variable.variable-> Index.blank(variable.length)))
+  private def checkDimensions(variable: VariableName):Option[Index] = dimensions.get(variable)
 }
 
 object Variables {

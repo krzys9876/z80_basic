@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, VariableIndex}
+import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -45,8 +45,8 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
 }
 
 trait VariableParser extends CommonParser {
-  def numVariable:Parser[VariableIndex]=numVariableName ^^ {VariableIndex.fromString}
-  def textVariable:Parser[VariableIndex]=textVariableName ^^ {VariableIndex.fromString}
+  def numVariable:Parser[Variable]=numVariableName ^^ {Variable.fromString}
+  def textVariable:Parser[Variable]=textVariableName ^^ {Variable.fromString}
   def numVariableName:Parser[String]="""([A-Z]+)""".r
   def textVariableName:Parser[String]="""([A-Z]+\$)""".r
 }

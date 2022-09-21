@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.parser.LineParser
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, VariableIndex}
+import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Variable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -101,20 +101,20 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("parse LET line for arrays") {
     Scenario("parse LET with numeric array") {
       assert(LineParser("15 LET A(4)=1.2").contains(
-        Line(15,LET(NumericAssignment(VariableIndex("A",ExprIndex.static(List(4))),1.2)))))
+        Line(15,LET(NumericAssignment(Variable("A",ExprIndex.static(List(4))),1.2)))))
       assert(LineParser("20 LET B(1,2,3,4,5,6,7)=23.45").contains(
-        Line(20,LET(NumericAssignment(VariableIndex("B",ExprIndex.static(List(1,2,3,4,5,6,7))),23.45)))))
+        Line(20,LET(NumericAssignment(Variable("B",ExprIndex.static(List(1,2,3,4,5,6,7))),23.45)))))
       assert(LineParser("25 LET C(1,2)=D(9,3,2)").contains(
-        Line(25,LET(NumericAssignment(VariableIndex("C",ExprIndex.static(List(1,2))),ExprVariable(VariableIndex("D",ExprIndex.static(List(9,3,2)))))))))
+        Line(25,LET(NumericAssignment(Variable("C",ExprIndex.static(List(1,2))),ExprVariable(Variable("D",ExprIndex.static(List(9,3,2)))))))))
     }
     Scenario("parse LET with text array") {
       assert(LineParser("15 LET A$(4)=\"abc\"").contains(
-        Line(15,LET(Assignment(VariableIndex("A$",ExprIndex.static(List(4))),StaticTextExpr("abc"))))))
+        Line(15,LET(Assignment(Variable("A$",ExprIndex.static(List(4))),StaticTextExpr("abc"))))))
       assert(LineParser("20 LET B$(1,2,3,4,5,6,7)=\"cde\"").contains(
-        Line(20,LET(Assignment(VariableIndex("B$",ExprIndex.static(List(1,2,3,4,5,6,7))),StaticTextExpr("cde"))))))
+        Line(20,LET(Assignment(Variable("B$",ExprIndex.static(List(1,2,3,4,5,6,7))),StaticTextExpr("cde"))))))
       assert(LineParser("25 LET C$(1,2)=D$(4)").contains(
-        Line(25,LET(Assignment(VariableIndex("C$",ExprIndex.static(List(1,2))),
-          ExprVariable(VariableIndex("D$",ExprIndex.static(List(4)))))))))
+        Line(25,LET(Assignment(Variable("C$",ExprIndex.static(List(1,2))),
+          ExprVariable(Variable("D$",ExprIndex.static(List(4)))))))))
     }
     Scenario("do not parse mix assignment numeric/text values/variables/arrays") {
       assert(LineParser("15 LET A$(1)=123").isLeft)
@@ -125,14 +125,14 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("parse expressions in array indexes") {
       assert(LineParser("15 LET A(B+C)=D(E,F)").contains(Line(15,
         LET(NumericAssignment(
-          VariableIndex("A",ExprIndex(
+          Variable("A",ExprIndex(
             List(ExprOperation.plus(ExprVariable("B"),ExprVariable("C"))))),
-          ExprVariable(VariableIndex("D",ExprIndex(List(ExprVariable("E"),ExprVariable("F"))))))))))
+          ExprVariable(Variable("D",ExprIndex(List(ExprVariable("E"),ExprVariable("F"))))))))))
       assert(LineParser("15 LET A$(B+C)=D$(E,F)").contains(Line(15,
         LET(Assignment(
-          VariableIndex("A$",ExprIndex(
+          Variable("A$",ExprIndex(
             List(ExprOperation.plus(ExprVariable("B"),ExprVariable("C"))))),
-          ExprVariable(VariableIndex("D$",ExprIndex(List(ExprVariable("E"),ExprVariable("F"))))))))))
+          ExprVariable(Variable("D$",ExprIndex(List(ExprVariable("E"),ExprVariable("F"))))))))))
     }
   }
 

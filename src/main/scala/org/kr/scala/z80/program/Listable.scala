@@ -26,28 +26,28 @@ case class Line(number: LineNumber, statement: Statement) extends Listable {
     statement.execute(program, newEnv)
   }
 
-  def isNextFor(variable: VariableIndex): Boolean =
+  def isNextFor(variable: Variable): Boolean =
     statement.isInstanceOf[NEXT] && statement.asInstanceOf[NEXT].isNextFor(variable)
 }
 
-abstract class AssignmentBase(val variableIndex: VariableIndex, val expression: Expression) extends Listable {
-  override def list: String = f"${variableIndex.list}=${expression.list}"
+abstract class AssignmentBase(val variable: Variable, val expression: Expression) extends Listable {
+  override def list: String = f"${variable.list}=${expression.list}"
 }
 
-case class Assignment(override val variableIndex: VariableIndex, override val expression: Expression)
-  extends AssignmentBase(variableIndex,expression)
+case class Assignment(override val variable: Variable, override val expression: Expression)
+  extends AssignmentBase(variable,expression)
 
 object Assignment {
-  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(VariableIndex(variable,ExprIndex.empty), expression)
+  def apply(variable: VariableName, expression: Expression): Assignment = new Assignment(Variable(variable,ExprIndex.empty), expression)
 }
 
-case class NumericAssignment(override val variableIndex: VariableIndex, numExpression: NumericExpression)
-  extends AssignmentBase(variableIndex,numExpression) {
-  override def list: String = f"${variableIndex.list}=${expression.list}"
+case class NumericAssignment(override val variable: Variable, numExpression: NumericExpression)
+  extends AssignmentBase(variable,numExpression) {
+  override def list: String = f"${variable.list}=${expression.list}"
 }
 
 object NumericAssignment {
-  def apply(variable: Variable, expression: NumericExpression): NumericAssignment =
-    new NumericAssignment(VariableIndex(variable,ExprIndex.empty), expression)
+  def apply(variable: VariableName, expression: NumericExpression): NumericAssignment =
+    new NumericAssignment(Variable(variable,ExprIndex.empty), expression)
 }
 

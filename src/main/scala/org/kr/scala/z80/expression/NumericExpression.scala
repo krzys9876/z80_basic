@@ -1,7 +1,7 @@
 package org.kr.scala.z80.expression
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.program.VariableIndex
+import org.kr.scala.z80.program.Variable
 
 import java.text.DecimalFormat
 import scala.language.implicitConversions
@@ -29,19 +29,19 @@ object ExprNumber {
   implicit def fromDouble(num:Double):ExprNumber = new ExprNumber(num)
 }
 
-case class ExprVariable(variableIndex: VariableIndex) extends NumericExpression {
+case class ExprVariable(variable: Variable) extends NumericExpression {
   override def evaluate(env:Environment): Either[String, BigDecimal] =
-    env.getValueAs[BigDecimal](variableIndex) match {
-      case Left(_) => Left(f"missing value for variable: ${variableIndex.list}")
+    env.getValueAs[BigDecimal](variable) match {
+      case Left(_) => Left(f"missing value for variable: ${variable.list}")
       case Right(value) => Right(value)
     }
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
-  override def list: String = variableIndex.list
+  override def list: String = variable.list
 }
 
 object ExprVariable {
-  def apply(varName:String):ExprVariable=new ExprVariable(VariableIndex.fromString(varName))
-  implicit def fromString(varName:String):ExprVariable=new ExprVariable(VariableIndex.fromString(varName))
+  def apply(varName:String):ExprVariable=new ExprVariable(Variable.fromString(varName))
+  implicit def fromString(varName:String):ExprVariable=new ExprVariable(Variable.fromString(varName))
 }
 
 case class ExprOperation(factor1: NumericExpression, factor2: NumericExpression, operator: String) extends NumericExpression {
