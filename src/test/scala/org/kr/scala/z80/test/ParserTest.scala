@@ -56,11 +56,11 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
           PrintableToken(ExprVariable("A")),
           PrintableToken(Some(","),ExprNumber(1)),
           PrintableToken(Some(";"),BlankTextExpr))))))
-      /*assert(LineParser("10 PRINT 2,3,").contains(
+      assert(LineParser("10 PRINT 2,3,").contains(
         Line(10,PRINT(Vector(
           PrintableToken(ExprNumber(2)),
           PrintableToken(Some(","),ExprNumber(3)),
-          PrintableToken(Some(","),StaticTextExpr("")))))))*/
+          PrintableToken(Some(","),BlankTextExpr))))))
     }
   }
 
