@@ -1,6 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
+import org.kr.scala.z80.program.VariableIndex
 
 trait NumericExpressionParser extends CommonParser with VariableParser {
   // Output type
@@ -43,7 +44,7 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
 
   //Building blocks for hierarchy of operations
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
-  private def variableExpr:PN=numVariable ^^ (v => ExprVariable(v))
+  private def variableExpr:PN=numVariable ^^ (v => ExprVariable(VariableIndex(v)))
   private def exprParen: PN = "(" ~> numericExpression <~ ")"
   private def func: PN = ("ABS" | "SIN" | "COS" | "INT" | "SQR") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
   private def neg: PN = "-" ~ factor1 ^^ { case _ ~ f => ExprFunction(f,"-") }

@@ -22,7 +22,7 @@ case class Environment(
     }
   def getValue(variable: Variable):Option[Any]=variables.value(variable)
   def getValue(variableIndex: VariableIndex):Option[Any]=variables.value(variableIndex)
-  def getValueAs[T](variable: Variable):Option[T]=variables.value(variable).map(_.asInstanceOf[T])
+  def getValueAs[T](variableIndex: VariableIndex):Option[T]=variables.value(variableIndex).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variableIndex:VariableIndex, line:LineNumber,

@@ -32,7 +32,7 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
     }
   }
   private def calculateNextValue(environment: Environment,stepVal:BigDecimal):Option[BigDecimal] = {
-    environment.getValueAs[BigDecimal](assignment.variableIndex.variable) match {
+    environment.getValueAs[BigDecimal](assignment.variableIndex) match {
       case None=>None
       case Some(value)=> Some(value + stepVal)
     }
