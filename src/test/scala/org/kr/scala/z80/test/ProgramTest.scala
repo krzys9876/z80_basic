@@ -56,6 +56,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("C")).contains("qwerty"))
       assert(environment.getValue(Variable("D")).contains(0))
     }
+  }
+  Feature("FOR loop") {
     Scenario("Initialize for loop") {
       Given("a program consisting of only for statement")
       val program = new Program(Vector(
@@ -69,8 +71,6 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue("I").contains(1))
       assert(environment.getFor("I").contains(ForState("I", 1, 3, 1, 10)))
     }
-  }
-  Feature("FOR loop") {
     Scenario("Run empty for loop") {
       Given("a program consisting of empty for loop without step")
       val program = new Program(Vector(
