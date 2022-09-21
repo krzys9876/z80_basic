@@ -5,8 +5,33 @@ import org.kr.scala.z80.expression.{ExprNumber, NumericExpression}
 
 import scala.language.implicitConversions
 
+case class Variable(variable:VariableName, index:ExprIndex) extends Listable {
+  def length:Int=index.num.length
+  def evaluateIndex(environment: Environment):Either[ExitCode,Index] =
+    index.toIndex(environment) match {
+      case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
+      case Right(i) => Right(i)
+    }
+
+  override def list: String = f"${variable.list}${index.list}"
+}
+
+object Variable {
+  def apply(variable: VariableName):Variable = new Variable(variable,ExprIndex.empty)
+  def apply(name:String,index:ExprIndex):Variable = new Variable(VariableName(name),index)
+  implicit def fromString(name:String):Variable = Variable(VariableName(name))
+  def asStatic(variable: VariableName, index:Index):VariableStatic =
+    new VariableStatic(variable, Index(index.dimensions))
+}
+
 case class VariableName(name:String) extends Listable {
   override def list: String = name
+}
+
+case class VariableStatic(variableName: VariableName, index: Index)
+
+object VariableStatic {
+  def apply(variableName: VariableName):VariableStatic=new VariableStatic(variableName,Index.empty)
 }
 
 /** Encapsulates a list of numeric expressions representing dynamic index of an array
@@ -33,24 +58,6 @@ object ExprIndex {
 /** Joins a variable name with its index (empty for simple variables, defined for arrays).
  * Index consists of a list of numeric expressions to enable dynamic array reference.
  */
-case class Variable(variable:VariableName, index:ExprIndex) extends Listable {
-  def length:Int=index.num.length
-  def evaluateIndex(environment: Environment):Either[ExitCode,Index] =
-    index.toIndex(environment) match {
-      case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
-      case Right(i) => Right(i)
-    }
-
-  override def list: String = f"${variable.list}${index.list}"
-}
-
-object Variable {
-  def apply(variable: VariableName):Variable = new Variable(variable,ExprIndex.empty)
-  def apply(name:String,index:ExprIndex):Variable = new Variable(VariableName(name),index)
-  implicit def fromString(name:String):Variable = Variable(VariableName(name))
-  def asStatic(variable: VariableName, index:Index):Variable =
-    new Variable(variable, ExprIndex(index.dimensions.map(dim=>ExprNumber(dim))))
-}
 
 /** Contains a list of numbers representing size of ech dimension.
  * E.g.: (5,10) means first dimension is 5-elements long, second dimension is 10 elements long.
