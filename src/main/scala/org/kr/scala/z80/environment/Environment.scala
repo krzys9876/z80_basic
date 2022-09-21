@@ -18,9 +18,10 @@ case class Environment(
       case Right(vars)=>copy(variables=vars)
       case Left(code)=>setExitCode(code)
     }
-  def getValue(variable: Variable):Option[Any]=variables.value(variable)
-  def getValue(variableIndex: VariableIndex):Option[Any]=variables.value(variableIndex,this)
-  def getValueAs[T](variableIndex: VariableIndex):Option[T]=variables.value(variableIndex,this).map(_.asInstanceOf[T])
+  def getValue(variableIndex: VariableIndex):Either[ExitCode,Any]=
+    variables.value(variableIndex,this)
+  def getValueAs[T](variableIndex: VariableIndex):Either[ExitCode,T]=
+    variables.value(variableIndex,this).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variableIndex:VariableIndex, line:LineNumber,

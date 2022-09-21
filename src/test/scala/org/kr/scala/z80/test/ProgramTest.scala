@@ -51,10 +51,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment = initialEnvironment.run(program)
       Then("environment contains variables with expected values")
       assert(environment.getCurrentLine.contains(LineNumber(45)))
-      assert(environment.getValue(Variable("A")).contains(123.0))
-      assert(environment.getValue(Variable("B")).contains(234.123))
-      assert(environment.getValue(Variable("C")).contains("qwerty"))
-      assert(environment.getValue(Variable("D")).contains(0))
+      assert(environment.getValue("A").contains(123.0))
+      assert(environment.getValue("B").contains(234.123))
+      assert(environment.getValue("C").contains("qwerty"))
+      assert(environment.getValue("D").contains(0))
     }
     Scenario("Run assignment to an array") {
       Given("a program consisting of assignment lines with arrays")
@@ -190,8 +190,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment = initialEnvironment.run(program)
       Then("loops are executed properly")
       assert(environment.getCurrentLine.contains(LineNumber(70)))
-      assert(environment.getValue(Variable("I")).contains(3))
-      assert(environment.getValue(Variable("J")).contains(2))
+      assert(environment.getValue("I").contains(3))
+      assert(environment.getValue("J").contains(2))
       assert(environment.console == List(
         "X\n", "Y\n", "Y\n",
         "X\n", "Y\n", "Y\n",
@@ -261,7 +261,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("the loop is not executed")
       And("program ends with error - missing next statement")
       assert(environment.getCurrentLine.contains(LineNumber(10)))
-      assert(environment.getValue("I").isEmpty)
+      assert(environment.getValue("I").isLeft)
       assert(environment.exitCode == ExitCode.MISSING_NEXT)
       assert(environment.console.isEmpty)
     }

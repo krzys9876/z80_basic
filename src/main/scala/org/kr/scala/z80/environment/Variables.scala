@@ -6,14 +6,15 @@ import scala.language.implicitConversions
 case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Index]) {
   def value(variable: Variable):Option[Any]=values.get(VariableIndex(variable))
   //TODO: convert Option to Either
-  def value(variableIndex: VariableIndex, environment: Environment):Option[Any]= {
+  def value(variableIndex: VariableIndex, environment: Environment):Either[ExitCode,Any]= {
     variableIndex.evaluateIndex(environment) match {
-      case Left(_) => None //Left(ExitCode.INVALID_ARRAY_INDEX)
+      case Left(code) => Left(code)
       case Right(index) =>
         checkDimensions(variableIndex.variable) match {
-          case None => None //Left(ExitCode.INVALID_ARRAY_INDEX)
-          case Some(dim) if index.fitsSize(dim) => values.get(VariableIndex.asStatic(variableIndex.variable,index))
-          case _ => None //Left(ExitCode.INVALID_ARRAY_INDEX)
+          case Some(dim) if index.fitsSize(dim) =>
+            get(VariableIndex.asStatic(variableIndex.variable,index))
+          case None => Left(ExitCode.INVALID_ARRAY_INDEX)
+          case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
   }
@@ -29,6 +30,12 @@ case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Inde
           case Some(dim) if index.fitsSize(dim) => Right(storeValue(variableIndex, index, valueToStore))
           case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
+    }
+
+  private def get(variableIndex:VariableIndex):Either[ExitCode,Any] =
+    values.get(variableIndex) match {
+      case None => Left(ExitCode.FATAL_CANNOT_GET_VALUE)
+      case Some(v) => Right(v)
     }
 
   private def storeValue(variable: VariableIndex, evaluatedIndex:Index, valueToStore:Any):Variables=

@@ -1,7 +1,7 @@
 package org.kr.scala.z80.expression
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.program.{Index, Listable, Variable, VariableIndex}
+import org.kr.scala.z80.program.VariableIndex
 
 import java.text.DecimalFormat
 import scala.language.implicitConversions
@@ -32,8 +32,8 @@ object ExprNumber {
 case class ExprVariable(variableIndex: VariableIndex) extends NumericExpression {
   override def evaluate(env:Environment): Either[String, BigDecimal] =
     env.getValueAs[BigDecimal](variableIndex) match {
-      case None => Left(f"missing value for variable: ${variableIndex.list}")
-      case Some(result) => Right(result)
+      case Left(_) => Left(f"missing value for variable: ${variableIndex.list}")
+      case Right(value) => Right(value)
     }
   override def valueNum(env:Environment): Option[BigDecimal] = evaluate(env).toOption
   override def list: String = variableIndex.list
