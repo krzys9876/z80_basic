@@ -26,34 +26,28 @@ case class Line(number: LineNumber, statement: Statement) extends Listable {
     statement.execute(program, newEnv)
   }
 
-  def isNextFor(variable: Variable): Boolean =
+  def isNextFor(variable: VariableIndex): Boolean =
     statement.isInstanceOf[NEXT] && statement.asInstanceOf[NEXT].isNextFor(variable)
 }
 
-abstract class AssignmentBase(val variable: Variable, val expression: Expression) extends Listable {
-  override def list: String = f"${variable.list}=${expression.list}"
+abstract class AssignmentBase(val variableIndex: VariableIndex, val expression: Expression) extends Listable {
+  override def list: String = f"${variableIndex.list}=${expression.list}"
 }
 
-case class Assignment(override val variable: Variable, override val expression: Expression)
-  extends AssignmentBase(variable,expression)
+case class Assignment(override val variableIndex: VariableIndex, override val expression: Expression)
+  extends AssignmentBase(variableIndex,expression)
 
 object Assignment {
-  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(variable, expression)
+  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(VariableIndex(variable,Index.empty), expression)
 }
 
-case class NumericAssignment(override val variable: Variable, numExpression: NumericExpression)
-  extends AssignmentBase(variable,numExpression) {
-  override def list: String = f"${variable.list}=${expression.list}"
+case class NumericAssignment(override val variableIndex: VariableIndex, numExpression: NumericExpression)
+  extends AssignmentBase(variableIndex,numExpression) {
+  override def list: String = f"${variableIndex.list}=${expression.list}"
 }
 
 object NumericAssignment {
-  def apply(variable: Variable, expression: NumericExpression): NumericAssignment = new NumericAssignment(variable, expression)
+  def apply(variable: Variable, expression: NumericExpression): NumericAssignment =
+    new NumericAssignment(VariableIndex(variable,Index.empty), expression)
 }
 
-case class Variable (name:String) extends Listable {
-  override def list: String = name
-}
-
-object Variable {
-  implicit def fromString(name:String):Variable = new Variable(name)
-}

@@ -1,27 +1,27 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Variable}
+import org.kr.scala.z80.program.{LineNumber, VariableIndex}
 
-case class ForState(variable:Variable,
+case class ForState(variableIndex:VariableIndex,
                     start:BigDecimal,end:BigDecimal,step:BigDecimal,
                     forLine:LineNumber, status:ForStatus)
 
 object ForState {
-  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,step:BigDecimal,forLine:LineNumber):ForState=
-    new ForState(variable,start,end,step,forLine,ForStatus.STARTED)
-  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,forLine:LineNumber):ForState=
-    new ForState(variable,start,end,1,forLine,ForStatus.STARTED)
-  def apply(variable:Variable,start:BigDecimal,end:BigDecimal,forLine:LineNumber,status:ForStatus):ForState=
-    new ForState(variable,start,end,1,forLine,status)
+  def apply(variableIndex:VariableIndex,start:BigDecimal,end:BigDecimal,step:BigDecimal,forLine:LineNumber):ForState=
+    new ForState(variableIndex,start,end,step,forLine,ForStatus.STARTED)
+  def apply(variableIndex:VariableIndex,start:BigDecimal,end:BigDecimal,forLine:LineNumber):ForState=
+    new ForState(variableIndex,start,end,1,forLine,ForStatus.STARTED)
+  def apply(name:String,start:BigDecimal,end:BigDecimal,forLine:LineNumber,status:ForStatus):ForState=
+    new ForState(VariableIndex.fromString(name),start,end,1,forLine,status)
 }
 
-class ForStack(private val map:Map[Variable,ForState]) {
+class ForStack(private val map:Map[VariableIndex,ForState]) {
   def isEmpty:Boolean=map.isEmpty
-  def push(variable:Variable,state:ForState):ForStack=new ForStack(map ++ Map(variable->state))
-  def pop(variable:Variable):ForStack=new ForStack(map.removed(variable))
+  def push(variableIndex:VariableIndex,state:ForState):ForStack=new ForStack(map ++ Map(variableIndex->state))
+  def pop(variableIndex:VariableIndex):ForStack=new ForStack(map.removed(variableIndex))
 
   // find 'for' statement for a given variable of any 'for' before given line number
-  def lineFor(variable:Variable):Option[ForState]= map.get(variable)
+  def lineFor(variableIndex:VariableIndex):Option[ForState]= map.get(variableIndex)
   def lineFor(beforeLineNum:LineNumber):Option[ForState]= findLineBefore(beforeLineNum)
 
   private def findLineBefore(beforeNum: LineNumber):Option[ForState]={

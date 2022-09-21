@@ -37,7 +37,7 @@ class Program(val srcLines: Vector[Line]) {
       .find(_.number == lineNum).map(Right(_))
       .getOrElse(Left(ExitCode.FATAL_LINE_NOT_FOUND))
 
-  def getNextFor(variable: Variable, from: LineNumber): Option[LineNumber] = {
+  def getNextFor(variable: VariableIndex, from: LineNumber): Option[LineNumber] = {
     val forLineIndex = lines
       .find(_.number == from)
       .map(lines.indexOf).getOrElse(-1)

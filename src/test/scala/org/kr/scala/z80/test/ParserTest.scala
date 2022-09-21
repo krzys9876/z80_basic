@@ -1,7 +1,7 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
-import org.kr.scala.z80.program.parser.LineParser
+import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.{FOR, GOSUB, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec

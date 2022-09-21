@@ -1,7 +1,7 @@
 package org.kr.scala.z80
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.program.parser.LineParser
+import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.Program
 
 object Main extends App {

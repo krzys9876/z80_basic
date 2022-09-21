@@ -1,7 +1,6 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Program, Variable}
-
+import org.kr.scala.z80.program.{LineNumber, Program, Variable, VariableIndex}
 import scala.annotation.tailrec
 import scala.math.BigDecimal
 
@@ -26,15 +25,15 @@ case class Environment(
   def getValueAs[T](variable: Variable):Option[T]=variables.value(variable).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
-  def setForStack(variable:Variable, line:LineNumber,
+  def setForStack(variableIndex:VariableIndex, line:LineNumber,
                   start:BigDecimal,end:BigDecimal,step:BigDecimal,
                   forStatus: ForStatus=ForStatus.STARTED):Environment=
-    copy(forStack=forStack.push(variable,ForState(variable,start,end,step,line,forStatus)))
-  def clearForStack(variable:Variable):Environment= copy(forStack=forStack.pop(variable))
-  def finishForStack(variable:Variable):Environment= {
-    val forState=getFor(variable).map(state=>
-      ForState(variable,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
-    forState.map(state=>copy(forStack=forStack.push(variable,state))).getOrElse(this)
+    copy(forStack=forStack.push(variableIndex,ForState(variableIndex,start,end,step,line,forStatus)))
+  def clearForStack(variableIndex:VariableIndex):Environment= copy(forStack=forStack.pop(variableIndex))
+  def finishForStack(variableIndex:VariableIndex):Environment= {
+    val forState=getFor(variableIndex).map(state=>
+      ForState(variableIndex,state.start,state.end,state.step,state.forLine,ForStatus.FINISHED))
+    forState.map(state=>copy(forStack=forStack.push(variableIndex,state))).getOrElse(this)
   }
   def pushLine(nextLine:LineNumber):Environment= {
     getCurrentLine match {
@@ -53,24 +52,24 @@ case class Environment(
         }
     }
 
-  def getFor(variable:Variable):Option[ForState]=forStack.lineFor(variable)
-  def getFor(variable:Option[Variable]):Option[ForState]=
-    variable match {
+  def getFor(variableIndex:VariableIndex):Option[ForState]=forStack.lineFor(variableIndex)
+  def getFor(variableIndex:Option[VariableIndex]):Option[ForState]=
+    variableIndex match {
       case None=>getCurrentLine.flatMap(forStack.lineFor)
       case Some(forVar)=>getFor(forVar)
     }
 
-  def initFor(variable:Variable,value:BigDecimal,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
+  def initFor(variableIndex:VariableIndex,value:BigDecimal,start:BigDecimal,end:BigDecimal,step:BigDecimal):Environment =
     getCurrentLine match {
       case None=>setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
       case Some(lineNum)=>
-        setValue(variable, value)
-          .setForStack(variable,lineNum,start,end,step)
+        setValue(variableIndex, value)
+          .setForStack(variableIndex,lineNum,start,end,step)
     }
 
-  def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setValue(variable, nextValue)
+  def continueFor(variable: VariableIndex, nextValue:BigDecimal):Environment = setValue(variable, nextValue)
 
-  def finishFor(program: Program, variable: Variable):Environment =
+  def finishFor(program: Program, variable: VariableIndex):Environment =
     getCurrentLine match {
       case None => setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
       case Some(lineNum) =>

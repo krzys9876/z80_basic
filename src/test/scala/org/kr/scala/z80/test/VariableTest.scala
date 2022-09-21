@@ -1,9 +1,9 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.environment.{Index, Environment, ExitCode, VariableIndex}
+import org.kr.scala.z80.environment.{Environment, ExitCode}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
-import org.kr.scala.z80.program.Variable._
+import org.kr.scala.z80.program.{Index, VariableIndex}
 
 class VariableTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("simple variables") {

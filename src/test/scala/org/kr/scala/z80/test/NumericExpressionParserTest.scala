@@ -1,7 +1,7 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
-import org.kr.scala.z80.program.parser.{BaseParser, NumericExpressionParser}
+import org.kr.scala.z80.parser.{BaseParser, NumericExpressionParser}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._

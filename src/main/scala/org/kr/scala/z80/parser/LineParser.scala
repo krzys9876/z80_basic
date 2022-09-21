@@ -1,7 +1,7 @@
-package org.kr.scala.z80.program.parser
+package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable, VariableIndex}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -73,15 +73,15 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
 }
 
 trait VariableParser extends CommonParser {
-  def numVariable:Parser[Variable]=numVariableName ^^ {Variable(_)}
-  def textVariable:Parser[Variable]=textVariableName ^^ {Variable(_)}
+  def numVariable:Parser[Variable]=numVariableName ^^ Variable
+  def textVariable:Parser[Variable]=textVariableName ^^ Variable
   private def numVariableName:Parser[String]="""([A-Z]+)""".r
   private def textVariableName:Parser[String]="""([A-Z]+$)""".r
 }
 
 trait NextParser extends CommonParser with VariableParser {
   def next:Parser[NEXT] =
-    "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(v))} |
+    "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(VariableIndex(v)))} |
       "NEXT" ~ emptyString ^^ {_ => NEXT()}
 }
 

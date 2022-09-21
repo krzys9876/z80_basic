@@ -1,4 +1,4 @@
-package org.kr.scala.z80.program.parser
+package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{ExprFunction, ExprNumber, ExprOperation, ExprVariable, NumericExpression}
 
