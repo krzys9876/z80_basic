@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, VariableIndex}
+import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, VariableIndex}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -44,14 +44,11 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
         s.getOrElse(List()).map(sep=>PrintableToken(Some(sep),BlankTextExpr))}
 }
 
-trait VariableParser extends CommonParser with IndexParser {
+trait VariableParser extends CommonParser {
   def numVariable:Parser[VariableIndex]=numVariableName ^^ {VariableIndex.fromString}
   def textVariable:Parser[VariableIndex]=textVariableName ^^ {VariableIndex.fromString}
-  def numArray:Parser[VariableIndex]=numVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
-  def textArray:Parser[VariableIndex]=textVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
-
-  private def numVariableName:Parser[String]="""([A-Z]+)""".r
-  private def textVariableName:Parser[String]="""([A-Z]+\$)""".r
+  def numVariableName:Parser[String]="""([A-Z]+)""".r
+  def textVariableName:Parser[String]="""([A-Z]+\$)""".r
 }
 
 trait NextParser extends CommonParser with VariableParser {
@@ -78,12 +75,6 @@ trait AssignmentParser extends VariableParser with NumericExpressionParser {
   def textAssignment:Parser[Assignment] =
     (textArray | textVariable) ~ ("=" ~> anyTextQuoted) ^^ {case v ~ e => Assignment(v,StaticTextExpr(e))} |
       (textArray | textVariable) ~ ("=" ~> (textArray | textVariable)) ^^ {case v ~ e => Assignment(v,ExprVariable(e))}
-}
-
-trait IndexParser extends CommonParser {
-  def index:Parser[Index]="(" ~> rep1sep(indexSingle,indexSeparator) <~ ")" ^^ {l => Index(l)}
-  private def indexSingle[Int]=integerNumber ^^ {_.toInt}
-  private def indexSeparator:Parser[String]=","
 }
 
 trait LetParser extends AssignmentParser {

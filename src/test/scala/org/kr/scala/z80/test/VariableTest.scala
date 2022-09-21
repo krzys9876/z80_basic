@@ -1,9 +1,10 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode}
+import org.kr.scala.z80.expression.ExprVariable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
-import org.kr.scala.z80.program.{Index, VariableIndex}
+import org.kr.scala.z80.program.{ExprIndex, Index, VariableIndex}
 
 class VariableTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("simple variables") {
@@ -44,10 +45,10 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
       Given("empty environment")
       val initEnv=Environment.empty
       When("values of 1- and 2-dimensional arrays are set")
-      val indexA11=VariableIndex("A1",Index(List(1,2)))
-      val indexA12=VariableIndex("A1",Index(List(2,2)))
-      val indexA21=VariableIndex("A2",Index(List(2)))
-      val indexA22=VariableIndex("A2",Index(List(5)))
+      val indexA11=VariableIndex("A1",ExprIndex.static(List(1,2)))
+      val indexA12=VariableIndex("A1",ExprIndex.static(List(2,2)))
+      val indexA21=VariableIndex("A2",ExprIndex.static(List(2)))
+      val indexA22=VariableIndex("A2",ExprIndex.static(List(5)))
       val afterEnv=initEnv
         .setValue(indexA11,1)
         .setValue(indexA12,2)
@@ -62,10 +63,10 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("replace values of arrays (default size)") {
       Given("environment with values of 1- and 2-dimensional arrays")
-      val indexZA1=VariableIndex("ZA",Index(List(2)))
-      val indexZA2=VariableIndex("ZA",Index(List(3)))
-      val indexZB1=VariableIndex("ZB",Index(List(2,4,6)))
-      val indexZB2=VariableIndex("ZB",Index(List(3,5,7)))
+      val indexZA1=VariableIndex("ZA",ExprIndex.static(List(2)))
+      val indexZA2=VariableIndex("ZA",ExprIndex.static(List(3)))
+      val indexZB1=VariableIndex("ZB",ExprIndex.static(List(2,4,6)))
+      val indexZB2=VariableIndex("ZB",ExprIndex.static(List(3,5,7)))
       val initEnv=Environment.empty
         .setValue(indexZA1,10)
         .setValue(indexZA2,20)
@@ -86,15 +87,38 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("replace values of arrays with dimensions out of range (default size)") {
       Given("environment with values of 1- and 2-dimensional arrays")
-      val index1=VariableIndex("XA",Index(List(2,1)))
+      val index1=VariableIndex("XA",ExprIndex.static(List(2,1)))
       val initEnv=Environment.empty
         .setValue(index1,100)
       When("new values are set with invalid dimension (outside of range)")
-      val index2=VariableIndex("XA",Index(List(2,11)))
+      val index2=VariableIndex("XA",ExprIndex.static(List(2,11)))
       val afterEnv=initEnv
         .setValue(index2,110)
       Then("environment ends with exit code - invalid array index")
       assert(afterEnv.exitCode==ExitCode.INVALID_ARRAY_INDEX)
+    }
+    Scenario("assign a value to array with variable as indexes") {
+      Given("environment with a variable")
+      val initEnv=Environment.empty
+        .setValue("I",BigDecimal.valueOf(2))
+      When("a value in array is set using the variable as index")
+      val index1=VariableIndex("AR",ExprIndex(List(ExprVariable("I"))))
+      val afterEnv=initEnv
+        .setValue(index1,100)
+      Then("the value is stored to environment")
+      val indexStatic1=VariableIndex("AR",ExprIndex.static(List(2)))
+      assert(afterEnv.getValue(indexStatic1).contains(100))
+    }
+    Scenario("read a value from array with variable as indexes") {
+      Given("environment with an array variable")
+      val indexStatic1=VariableIndex("ARR",ExprIndex.static(List(3)))
+      val env=Environment.empty
+        .setValue("J",BigDecimal.valueOf(3))
+        .setValue(indexStatic1,BigDecimal.valueOf(200))
+      When("a value is read from an array using the variable as index")
+      val index2=VariableIndex("ARR",ExprIndex(List(ExprVariable("J"))))
+      Then("the value is stored to environment")
+      assert(env.getValue(index2).contains(200))
     }
   }
 }

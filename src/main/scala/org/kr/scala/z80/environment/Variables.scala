@@ -5,28 +5,36 @@ import scala.language.implicitConversions
 
 case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Index]) {
   def value(variable: Variable):Option[Any]=values.get(VariableIndex(variable))
-  def value(variableIndex: VariableIndex):Option[Any]=values.get(variableIndex)
+  //TODO: convert Option to Either
+  def value(variableIndex: VariableIndex, environment: Environment):Option[Any]= {
+    variableIndex.index.toIndex(environment) match {
+      case Left(_) => None //Left(ExitCode.INVALID_ARRAY_INDEX)
+      case Right(index) =>
+        checkDimensions(variableIndex.variable) match {
+          case None => None //Left(ExitCode.INVALID_ARRAY_INDEX)
+          case Some(dim) if index.fitsSize(dim) => values.get(VariableIndex(variableIndex.variable,index))
+          case _ => None //Left(ExitCode.INVALID_ARRAY_INDEX)
+        }
+    }
+  }
 
-  def store(variable: Variable, valueToStore:Any):Either[ExitCode,Variables]= {
-    checkDimensions(variable) match {
-      case Some(d) if d==Index.empty =>Right(storeValue(VariableIndex(variable),valueToStore))
-      case None =>Right(storeValue(VariableIndex(variable),valueToStore))
-      case _ =>Left(ExitCode.INVALID_ARRAY_INDEX)
+  def store(variableIndex: VariableIndex, valueToStore:Any, environment: Environment):Either[ExitCode,Variables]=
+    variableIndex.index.toIndex(environment) match {
+      case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
+      case Right(index) =>
+        checkDimensions(variableIndex.variable) match {
+          case None =>
+            Right(storeValue(variableIndex, index, valueToStore)
+              .storeDimensions(variableIndex))
+          case Some(dim) if index.fitsSize(dim) => Right(storeValue(variableIndex, index, valueToStore))
+          case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
+        }
     }
-  }
-  def store(variableIndex: VariableIndex, valueToStore:Any):Either[ExitCode,Variables]= {
-    checkDimensions(variableIndex.variable) match {
-      case None =>
-        Right(storeValue(variableIndex,valueToStore)
-          .storeDimensions(variableIndex))
-      case Some(d) if variableIndex.index.fitsSize(d) => Right(storeValue(variableIndex,valueToStore))
-      case _=>Left(ExitCode.INVALID_ARRAY_INDEX)
-    }
-  }
-  private def storeValue(variable: VariableIndex, valueToStore:Any):Variables=
-    copy(values=values ++ Map(variable->valueToStore))
+
+  private def storeValue(variable: VariableIndex, evaluatedIndex:Index, valueToStore:Any):Variables=
+    copy(values=values ++ Map(VariableIndex(variable.variable,evaluatedIndex) -> valueToStore))
   private def storeDimensions(variableIndex: VariableIndex):Variables=
-    copy(dimensions=dimensions ++ Map(variableIndex.variable-> Index.blank(variableIndex.index)))
+    copy(dimensions=dimensions ++ Map(variableIndex.variable-> Index.blank(variableIndex.length)))
   private def checkDimensions(variable: Variable):Option[Index] = dimensions.get(variable)
 }
 

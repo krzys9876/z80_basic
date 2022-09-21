@@ -1,19 +1,49 @@
 package org.kr.scala.z80.program
 
+import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.expression.{ExprNumber, NumericExpression}
+
 import scala.language.implicitConversions
 
 case class Variable (name:String) extends Listable {
   override def list: String = name
 }
 
-case class VariableIndex(variable:Variable, index:Index) extends Listable {
+case class ExprIndex(index:List[NumericExpression]) extends Listable {
+  def toIndex(environment: Environment):Either[String,Index]={
+    val evaluated=index.map(_.evaluate(environment))
+    val errors=evaluated.filter(_.isLeft).map(_.swap.toOption.get)
+    val correct=evaluated.filter(_.isRight).map(_.toOption.get).map(_.toInt)
+
+    if(errors.isEmpty) Right(Index(correct))
+    else Left(errors.mkString(";"))
+  }
+
+  override def list: String = if(index.isEmpty) "" else "("+index.map(_.list).mkString(",")+")"
+}
+
+object ExprIndex {
+  def empty:ExprIndex=new ExprIndex(List())
+  def static(staticList:List[Int]):ExprIndex=new ExprIndex(staticList.map(ExprNumber(_)))
+}
+
+case class VariableIndexStore(variable:Variable, index:Index)
+
+/*object VariableIndexStore {
+  def apply(variable:Variable):VariableIndexStore=new VariableIndexStore(variable,Index.empty)
+}
+*/
+case class VariableIndex(variable:Variable, index:ExprIndex) extends Listable {
+  def length:Int=index.index.length
   override def list: String = f"${variable.list}${index.list}"
 }
 
 object VariableIndex {
-  def apply(variable: Variable):VariableIndex = new VariableIndex(variable,Index.empty)
-  def apply(name:String,index:Index):VariableIndex = new VariableIndex(Variable(name),index)
+  def apply(variable: Variable):VariableIndex = new VariableIndex(variable,ExprIndex.empty)
+  def apply(name:String,index:ExprIndex):VariableIndex = new VariableIndex(Variable(name),index)
   implicit def fromString(name:String):VariableIndex = VariableIndex(Variable(name))
+  def apply(variable: Variable, index:Index):VariableIndex =
+    new VariableIndex(variable, ExprIndex(index.dimensions.map(dim=>ExprNumber(dim))))
 }
 
 
@@ -38,8 +68,5 @@ case class Index(dimensions: List[Int]) extends Listable {
 object Index {
   val DEFAULT_DIM_SIZE:Int=10
   def empty:Index = new Index(List())
-  def blank(dimensions: Index):Index = {
-    val dimLen=dimensions.length
-    new Index(List.fill(dimLen)(DEFAULT_DIM_SIZE))
-  }
+  def blank(dimensionsNum: Int):Index = new Index(List.fill(dimensionsNum)(DEFAULT_DIM_SIZE))
 }

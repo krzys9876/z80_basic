@@ -38,7 +38,7 @@ case class Assignment(override val variableIndex: VariableIndex, override val ex
   extends AssignmentBase(variableIndex,expression)
 
 object Assignment {
-  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(VariableIndex(variable,Index.empty), expression)
+  def apply(variable: Variable, expression: Expression): Assignment = new Assignment(VariableIndex(variable,ExprIndex.empty), expression)
 }
 
 case class NumericAssignment(override val variableIndex: VariableIndex, numExpression: NumericExpression)
@@ -48,6 +48,6 @@ case class NumericAssignment(override val variableIndex: VariableIndex, numExpre
 
 object NumericAssignment {
   def apply(variable: Variable, expression: NumericExpression): NumericAssignment =
-    new NumericAssignment(VariableIndex(variable,Index.empty), expression)
+    new NumericAssignment(VariableIndex(variable,ExprIndex.empty), expression)
 }
 

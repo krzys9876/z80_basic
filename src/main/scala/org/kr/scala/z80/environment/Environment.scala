@@ -11,18 +11,16 @@ case class Environment(
                    console:Vector[String],
                    exitCode:ExitCode=ExitCode.NORMAL,
                    nextLineNum:Option[LineNumber]=None) {
-  def setValue(variable: Variable, value:Any):Environment=
-    processVariables(variables.store(variable,value))
   def setValue(variableIndex: VariableIndex, value:Any):Environment=
-    processVariables(variables.store(variableIndex,value))
+    processVariables(variables.store(variableIndex,value,this))
   private def processVariables(setValueResult:Either[ExitCode,Variables]):Environment =
     setValueResult match {
       case Right(vars)=>copy(variables=vars)
       case Left(code)=>setExitCode(code)
     }
   def getValue(variable: Variable):Option[Any]=variables.value(variable)
-  def getValue(variableIndex: VariableIndex):Option[Any]=variables.value(variableIndex)
-  def getValueAs[T](variableIndex: VariableIndex):Option[T]=variables.value(variableIndex).map(_.asInstanceOf[T])
+  def getValue(variableIndex: VariableIndex):Option[Any]=variables.value(variableIndex,this)
+  def getValueAs[T](variableIndex: VariableIndex):Option[T]=variables.value(variableIndex,this).map(_.asInstanceOf[T])
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variableIndex:VariableIndex, line:LineNumber,

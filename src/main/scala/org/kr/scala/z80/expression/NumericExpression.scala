@@ -1,7 +1,7 @@
 package org.kr.scala.z80.expression
 
 import org.kr.scala.z80.environment.Environment
-import org.kr.scala.z80.program.{Variable, VariableIndex}
+import org.kr.scala.z80.program.{Index, Listable, Variable, VariableIndex}
 
 import java.text.DecimalFormat
 import scala.language.implicitConversions
