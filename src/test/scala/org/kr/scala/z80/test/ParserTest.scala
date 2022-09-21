@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.parser.LineParser
-import org.kr.scala.z80.program.{FOR, GOSUB, GOTO, IF, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, VariableIndex}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -76,13 +76,51 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
     }
   }
 
-  Feature("parse LET line ") {
+  Feature("parse LET line for variables") {
     Scenario("parse LET with numeric variable") {
       assert(LineParser("15 LET A=12.34").contains(Line(15,LET(NumericAssignment("A",12.34)))))
       assert(LineParser("15 LET A=12+34").contains(Line(15,
         LET(NumericAssignment("A",ExprOperation.plus(12,34))))))
       assert(LineParser("15 LET A=B*2").contains(Line(15,
         LET(NumericAssignment("A",ExprOperation.mul("B",2))))))
+    }
+    Scenario("parse assignment without LET keyword") {
+      assert(LineParser("15 X=91.82").contains(Line(15,LET(NumericAssignment("X",91.82)))))
+    }
+    Scenario("parse LET with static text") {
+      assert(LineParser("15 LET A$=\"abc\"").contains(Line(15,LET(Assignment("A$",StaticTextExpr("abc"))))))
+    }
+    Scenario("do not parse mix assignment numeric/text values/variables") {
+      assert(LineParser("15 LET A$=123").isLeft)
+      assert(LineParser("15 LET A$=B").isLeft)
+      assert(LineParser("15 LET A=\"XYZ\"").isLeft)
+      assert(LineParser("15 LET A=B$").isLeft)
+    }
+  }
+
+  Feature("parse LET line for arrays") {
+    Scenario("parse LET with numeric array") {
+      assert(LineParser("15 LET A(4)=1.2").contains(
+        Line(15,LET(NumericAssignment(VariableIndex("A",Index(List(4))),1.2)))))
+      assert(LineParser("20 LET B(1,2,3,4,5,6,7)=23.45").contains(
+        Line(20,LET(NumericAssignment(VariableIndex("B",Index(List(1,2,3,4,5,6,7))),23.45)))))
+      assert(LineParser("25 LET C(1,2)=D(9,3,2)").contains(
+        Line(25,LET(NumericAssignment(VariableIndex("C",Index(List(1,2))),ExprVariable(VariableIndex("D",Index(List(9,3,2)))))))))
+    }
+    Scenario("parse LET with text array") {
+      assert(LineParser("15 LET A$(4)=\"abc\"").contains(
+        Line(15,LET(Assignment(VariableIndex("A$",Index(List(4))),StaticTextExpr("abc"))))))
+      assert(LineParser("20 LET B$(1,2,3,4,5,6,7)=\"cde\"").contains(
+        Line(20,LET(Assignment(VariableIndex("B$",Index(List(1,2,3,4,5,6,7))),StaticTextExpr("cde"))))))
+      assert(LineParser("25 LET C$(1,2)=D$(4)").contains(
+        Line(25,LET(Assignment(VariableIndex("C$",Index(List(1,2))),
+          ExprVariable(VariableIndex("D$",Index(List(4)))))))))
+    }
+    Scenario("do not parse mix assignment numeric/text values/variables/arrays") {
+      assert(LineParser("15 LET A$(1)=123").isLeft)
+      assert(LineParser("15 LET A$=B(1,8,1)").isLeft)
+      assert(LineParser("15 LET A(2,3)=\"XYZ\"").isLeft)
+      assert(LineParser("15 LET A=B$(7)").isLeft)
     }
   }
 

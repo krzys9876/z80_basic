@@ -1,12 +1,12 @@
 package org.kr.scala.z80.parser
 
-import org.kr.scala.z80.expression.{BlankTextExpr, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, VariableIndex}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
+import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, VariableIndex}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
 trait StatementParser extends CommonParser with StatementWithoutIfParser with IfParser {
-  def statement: Parser[Statement] = statementWithoutIf | ifS
+  def statement: Parser[Statement] = statementWithoutIf | if_
 }
 
 trait CommonParser extends JavaTokenParsers {
@@ -35,20 +35,23 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
 
   private def staticTextExpr:Parser[StaticTextExpr] = anyTextQuoted ^^ StaticTextExpr
   private def token:Parser[Expression]=numericExpression | staticTextExpr
-  private def separator:Parser[String]=";" | ","
-  private def tokenSep:Parser[PrintableToken]=separator ~ token ^^ {case s ~ t => PrintableToken(Some(s),t)}
+  private def tokenSeparator:Parser[String]=";" | ","
+  private def tokenSep:Parser[PrintableToken]=tokenSeparator ~ token ^^ {case s ~ t => PrintableToken(Some(s),t)}
   private def tokens:Parser[List[PrintableToken]]=
-    token ~ opt(rep(tokenSep)) ~ opt(rep(separator)) ^^ {case t ~ l ~ s =>
+    token ~ opt(rep(tokenSep)) ~ opt(rep(tokenSeparator)) ^^ {case t ~ l ~ s =>
       List(PrintableToken(None,t)) ++
         l.getOrElse(List()) ++
         s.getOrElse(List()).map(sep=>PrintableToken(Some(sep),BlankTextExpr))}
 }
 
-trait VariableParser extends CommonParser {
+trait VariableParser extends CommonParser with IndexParser {
   def numVariable:Parser[VariableIndex]=numVariableName ^^ {VariableIndex.fromString}
   def textVariable:Parser[VariableIndex]=textVariableName ^^ {VariableIndex.fromString}
+  def numArray:Parser[VariableIndex]=numVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
+  def textArray:Parser[VariableIndex]=textVariableName ~ index ^^ {case n ~ i =>VariableIndex(n,i)}
+
   private def numVariableName:Parser[String]="""([A-Z]+)""".r
-  private def textVariableName:Parser[String]="""([A-Z]+$)""".r
+  private def textVariableName:Parser[String]="""([A-Z]+\$)""".r
 }
 
 trait NextParser extends CommonParser with VariableParser {
@@ -59,24 +62,33 @@ trait NextParser extends CommonParser with VariableParser {
 
 trait ForParser extends CommonParser with VariableParser with AssignmentParser {
   def for_ :Parser[FOR] =
-    "FOR" ~ numericAssignment ~ "TO" ~ numericExpression ~ "STEP" ~numericExpression  ^^ {
-      case _ ~ a ~ _ ~ to ~ _ ~ s => FOR(a,to,Some(s))} |
-      "FOR" ~ numericAssignment ~ "TO" ~ numericExpression ^^ { case _ ~ a ~ _ ~ to => FOR(a,to)}
+    ("FOR" ~> numericAssignment) ~ ("TO" ~> numericExpression) ~ ("STEP" ~> numericExpression)  ^^ {
+      case from ~ to ~ step => FOR(from,to,Some(step))} |
+      ("FOR" ~> numericAssignment) ~ ("TO" ~> numericExpression) ^^ { case from ~ to => FOR(from,to)}
 }
 
 trait AssignmentParser extends VariableParser with NumericExpressionParser {
-  def numericAssignment:Parser[NumericAssignment] = numVariable ~ "=" ~ numericExpression ^^ {
-    case v ~ _ ~ e => NumericAssignment(v,e)
+  def numericAssignment:Parser[NumericAssignment] = numVariable ~ ("=" ~> numericExpression) ^^ {
+    case v ~ e => NumericAssignment(v,e)
+  }
+  def numericArrayAssignment:Parser[NumericAssignment] = numArray ~ ("=" ~> numericExpression) ^^ {
+    case v ~ e => NumericAssignment(v,e)
   }
   //TODO: extend text assignment with text expressions (after it is implemented)
-  def textAssignment:Parser[Assignment] = textVariable ~ "=" ~ anyTextQuoted ^^ {
-    case v ~ _ ~ e => Assignment(v,StaticTextExpr(e))
-  }
+  def textAssignment:Parser[Assignment] =
+    (textArray | textVariable) ~ ("=" ~> anyTextQuoted) ^^ {case v ~ e => Assignment(v,StaticTextExpr(e))} |
+      (textArray | textVariable) ~ ("=" ~> (textArray | textVariable)) ^^ {case v ~ e => Assignment(v,ExprVariable(e))}
+}
+
+trait IndexParser extends CommonParser {
+  def index:Parser[Index]="(" ~> rep1sep(indexSingle,indexSeparator) <~ ")" ^^ {l => Index(l)}
+  private def indexSingle[Int]=integerNumber ^^ {_.toInt}
+  private def indexSeparator:Parser[String]=","
 }
 
 trait LetParser extends AssignmentParser {
-  def let:Parser[LET] = (numericAssignment | textAssignment) ^^ {LET(_)} |
-    "LET" ~ (numericAssignment | textAssignment) ^^ {case _ ~ a => LET(a)}
+  def let:Parser[LET] = (textAssignment | numericArrayAssignment | numericAssignment) ^^ {LET(_)} |
+    "LET" ~ (textAssignment | numericArrayAssignment | numericAssignment) ^^ {case _ ~ a => LET(a)}
 }
 
 trait GotoParser extends CommonParser {
@@ -84,10 +96,10 @@ trait GotoParser extends CommonParser {
 }
 
 trait IfParser extends CommonParser with NumericExpressionParser with StatementWithoutIfParser {
-  def ifS :Parser[IF] =
-    "IF" ~ numericExpression ~ "THEN" ~ (ifS | statementWithoutIf) ^^ {case _ ~ c ~ _ ~ s => IF(c,s)} |
-      "IF" ~ numericExpression ~ "THEN" ~ integerNumber ^^ {case _ ~ c ~ _ ~ n => IF(c,GOTO(n.toInt))} |
-      "IF" ~ numericExpression ~ goto ^^ {case _ ~ c ~ s => IF(c,s)}
+  def if_ :Parser[IF] =
+    ("IF" ~> numericExpression) ~ ("THEN" ~> (if_ | statementWithoutIf)) ^^ {case c ~ s => IF(c,s)} |
+      ("IF" ~> numericExpression) ~ ("THEN" ~> integerNumber) ^^ {case c ~ n => IF(c,GOTO(n.toInt))} |
+      ("IF" ~> numericExpression) ~ goto ^^ {case c ~ s => IF(c,s)}
 }
 
 trait GosubParser extends CommonParser {
