@@ -7,19 +7,19 @@ case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Inde
   def value(variable: Variable):Option[Any]=values.get(VariableIndex(variable))
   //TODO: convert Option to Either
   def value(variableIndex: VariableIndex, environment: Environment):Option[Any]= {
-    variableIndex.index.toIndex(environment) match {
+    variableIndex.evaluateIndex(environment) match {
       case Left(_) => None //Left(ExitCode.INVALID_ARRAY_INDEX)
       case Right(index) =>
         checkDimensions(variableIndex.variable) match {
           case None => None //Left(ExitCode.INVALID_ARRAY_INDEX)
-          case Some(dim) if index.fitsSize(dim) => values.get(VariableIndex(variableIndex.variable,index))
+          case Some(dim) if index.fitsSize(dim) => values.get(VariableIndex.asStatic(variableIndex.variable,index))
           case _ => None //Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
   }
 
   def store(variableIndex: VariableIndex, valueToStore:Any, environment: Environment):Either[ExitCode,Variables]=
-    variableIndex.index.toIndex(environment) match {
+    variableIndex.evaluateIndex(environment) match {
       case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
       case Right(index) =>
         checkDimensions(variableIndex.variable) match {
@@ -32,7 +32,7 @@ case class Variables(values:Map[VariableIndex,Any], dimensions:Map[Variable,Inde
     }
 
   private def storeValue(variable: VariableIndex, evaluatedIndex:Index, valueToStore:Any):Variables=
-    copy(values=values ++ Map(VariableIndex(variable.variable,evaluatedIndex) -> valueToStore))
+    copy(values=values ++ Map(VariableIndex.asStatic(variable.variable,evaluatedIndex) -> valueToStore))
   private def storeDimensions(variableIndex: VariableIndex):Variables=
     copy(dimensions=dimensions ++ Map(variableIndex.variable-> Index.blank(variableIndex.length)))
   private def checkDimensions(variable: Variable):Option[Index] = dimensions.get(variable)

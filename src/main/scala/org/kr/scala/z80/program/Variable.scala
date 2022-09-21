@@ -1,6 +1,6 @@
 package org.kr.scala.z80.program
 
-import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.environment.{Environment, ExitCode}
 import org.kr.scala.z80.expression.{ExprNumber, NumericExpression}
 
 import scala.language.implicitConversions
@@ -27,14 +27,14 @@ object ExprIndex {
   def static(staticList:List[Int]):ExprIndex=new ExprIndex(staticList.map(ExprNumber(_)))
 }
 
-case class VariableIndexStore(variable:Variable, index:Index)
-
-/*object VariableIndexStore {
-  def apply(variable:Variable):VariableIndexStore=new VariableIndexStore(variable,Index.empty)
-}
-*/
 case class VariableIndex(variable:Variable, index:ExprIndex) extends Listable {
   def length:Int=index.index.length
+  def evaluateIndex(environment: Environment):Either[ExitCode,Index] =
+    index.toIndex(environment) match {
+      case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
+      case Right(i) => Right(i)
+    }
+
   override def list: String = f"${variable.list}${index.list}"
 }
 
@@ -42,7 +42,7 @@ object VariableIndex {
   def apply(variable: Variable):VariableIndex = new VariableIndex(variable,ExprIndex.empty)
   def apply(name:String,index:ExprIndex):VariableIndex = new VariableIndex(Variable(name),index)
   implicit def fromString(name:String):VariableIndex = VariableIndex(Variable(name))
-  def apply(variable: Variable, index:Index):VariableIndex =
+  def asStatic(variable: Variable, index:Index):VariableIndex =
     new VariableIndex(variable, ExprIndex(index.dimensions.map(dim=>ExprNumber(dim))))
 }
 
