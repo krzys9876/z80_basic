@@ -1,7 +1,6 @@
 package org.kr.scala.z80.parser
 
-import org.kr.scala.z80.expression.{BlankTextExpr, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable, VariableIndex}
+import org.kr.scala.z80.program.{Line, LineNumber}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
