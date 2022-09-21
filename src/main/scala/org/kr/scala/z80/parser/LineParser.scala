@@ -12,9 +12,7 @@ abstract class BaseParser[T]() extends JavaTokenParsers {
   def process(input: String): Either[String, T] = {
     parseAll(result, input) match {
       case Success(result, _) => Right(result)
-      case failure: NoSuccess =>
-        //scala.sys.error(failure.msg)
-        Left(failure.msg)
+      case failure: NoSuccess => Left(failure.msg)
     }
   }
 }
@@ -73,15 +71,15 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
 }
 
 trait VariableParser extends CommonParser {
-  def numVariable:Parser[Variable]=numVariableName ^^ Variable
-  def textVariable:Parser[Variable]=textVariableName ^^ Variable
+  def numVariable:Parser[VariableIndex]=numVariableName ^^ {VariableIndex.fromString}
+  def textVariable:Parser[VariableIndex]=textVariableName ^^ {VariableIndex.fromString}
   private def numVariableName:Parser[String]="""([A-Z]+)""".r
   private def textVariableName:Parser[String]="""([A-Z]+$)""".r
 }
 
 trait NextParser extends CommonParser with VariableParser {
   def next:Parser[NEXT] =
-    "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(VariableIndex(v)))} |
+    "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(v))} |
       "NEXT" ~ emptyString ^^ {_ => NEXT()}
 }
 
