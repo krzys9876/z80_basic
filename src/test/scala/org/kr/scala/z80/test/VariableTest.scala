@@ -4,7 +4,7 @@ import org.kr.scala.z80.environment.{Environment, ExitCode}
 import org.kr.scala.z80.expression.ExprVariable
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
-import org.kr.scala.z80.program.{ExprIndex, Index, Variable}
+import org.kr.scala.z80.program.{ExprIndex, Variable}
 
 class VariableTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("simple variables") {

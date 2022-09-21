@@ -1,6 +1,6 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Program, VariableName, Variable}
+import org.kr.scala.z80.program.{LineNumber, Program, Variable}
 import scala.annotation.tailrec
 import scala.math.BigDecimal
 
