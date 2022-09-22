@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -23,9 +23,10 @@ trait CommonParser extends JavaTokenParsers {
 
 // avoid circular inheritance (IfParser cannot inherit from StatementParser, which must inherit from IfParser)
 trait StatementWithoutIfParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
-  with LetParser with GotoParser with GosubParser with ReturnParser with DimParser with DataParser {
+  with LetParser with GotoParser with GosubParser with ReturnParser with DimParser with DataParser
+  with ReadParser {
   def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_ | dim |
-    data
+    data | read
 }
 
 trait RemParser extends CommonParser {
@@ -114,4 +115,8 @@ trait DataParser extends CommonParser {
   private def number[BigDecimal]=floatingPointNumber ^^ {n=>BigDecimal(n.toDouble)}
   private def dataValue:Parser[Any]=number | anyTextQuoted | anyTextWoComma
   private def listOfValues:Parser[List[Any]]=rep1sep(dataValue,",")
+}
+
+trait ReadParser extends CommonParser with NumericExpressionParser {
+  def read :Parser[READ] = "READ" ~> (textArray | textVariable | numArray | numVariable) ^^ READ
 }

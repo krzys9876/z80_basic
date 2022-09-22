@@ -554,6 +554,21 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("A",ExprIndex.static(List(2)))).contains(4.5))
       assert(environment.getValue(Variable("A",ExprIndex.static(List(3)))).contains(6.7))
     }
+    Scenario("read more data than available") {
+      Given("program with read statement before data statements")
+      val program = new Program(Vector(
+        Line(10, READ("I")),
+        Line(20, READ("J")),
+        Line(30, READ("K")),
+        Line(40, DATA(List(BigDecimal(1),BigDecimal(2))))
+      ))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("error occurs - out of data")
+      assert(environment.exitCode==ExitCode.OUT_OF_DATA)
+      assert(environment.getCurrentLine.contains(LineNumber(30)))
+    }
   }
 
   @tailrec
