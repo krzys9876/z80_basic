@@ -1,6 +1,6 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Program, Variable, VariableStatic}
+import org.kr.scala.z80.program.{LineNumber, Program, Statement, Variable, VariableStatic}
 
 import scala.annotation.tailrec
 import scala.math.BigDecimal
@@ -93,31 +93,38 @@ case class Environment(
     }
 
   def getCurrentLine:Option[LineNumber]=lineStack.top
-
-  def run(program:Program):Environment= {
-    runLine(program.firstLineNumber,program)
-  }
-
+  def initBeforeProgram:Environment=setExitCode(ExitCode.NORMAL)
   def setExitCode(code:ExitCode):Environment = copy(exitCode=code)
 
+  def run(program:Program):Environment= {
+    initBeforeProgram
+      .runProgram(program,Statement.preprocess)
+      .initBeforeProgram
+      .runProgram(program,Statement.execute)
+  }
+
+  private def runProgram(program: Program,
+                         runFunction:Statement.processLineType) = runLine(program.firstLineNumber,program,runFunction)
   @tailrec
-  final def runLine(action:Either[ExitCode,LineNumber], program: Program):Environment= {
+  private final def runLine(action:Either[ExitCode,LineNumber], program: Program,
+                            runFunction:Statement.processLineType):Environment= {
     action match {
       case Left(code) =>setExitCode(code) // end of program
       case Right(lineNum) =>
         val (afterEnv,nextAction)=
           resetNextLine
-            .runOneLine(lineNum,program)
-        afterEnv.runLine(nextAction,program)
+            .runOneLine(lineNum,program,runFunction)
+        afterEnv.runLine(nextAction,program,runFunction)
     }
   }
 
   private def resetNextLine:Environment=copy(nextLineNum=None)
-  private def runOneLine(lineNum:LineNumber,program: Program):(Environment,Either[ExitCode,LineNumber]) = {
+  private def runOneLine(lineNum:LineNumber,program: Program,
+                         runFunction:Statement.processLineType):(Environment,Either[ExitCode,LineNumber]) = {
     program.lineByNum(lineNum) match {
       case Left(code)=>(this,Left(code))
       case Right(lineToExecute)=>
-        lineToExecute.execute(program,this.setLine(lineNum)) match {
+        lineToExecute.execute(program,this.setLine(lineNum),runFunction) match {
           case env if env.exitCode!=ExitCode.NORMAL => (env,Left(env.exitCode))
           case env =>
             // determine next line - either next line in program (or end of program code) or other number saved by the executed line
@@ -148,18 +155,4 @@ case class Environment(
 
 object Environment {
   def empty:Environment=new Environment(Variables.empty,Data.empty,ForStack.empty,LineStack.empty,Vector())
-}
-
-case class Data(values:Vector[Any],pos:Int) {
-  def read:(Either[ExitCode,Any],Data) = {
-    if(pos>=values.length) (Left(ExitCode.OUT_OF_DATA),this)
-    else (Right(values(pos)),nextPos)
-  }
-  def store(valuesToStore:List[Any]):Data = copy(values=values ++ valuesToStore)
-  private def nextPos:Data=copy(pos=pos+1)
-  def reset:Data=copy(pos=0)
-}
-
-object Data {
-  def empty:Data=new Data(Vector(),0)
 }

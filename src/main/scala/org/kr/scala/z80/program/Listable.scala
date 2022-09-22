@@ -21,10 +21,8 @@ object LineNumber {
 case class Line(number: LineNumber, statement: Statement) extends Listable {
   override def list: String = f"$number ${statement.list}"
 
-  def execute(program: Program, env: Environment): Environment = {
-    val newEnv = env.setLine(number)
-    statement.execute(program, newEnv)
-  }
+  def execute(program: Program, env: Environment, runFunction:Statement.processLineType): Environment =
+    runFunction(statement, program, env.setLine(number))
 
   def isNextFor(variable: Variable): Boolean =
     statement.isInstanceOf[NEXT] && statement.asInstanceOf[NEXT].isNextFor(variable)

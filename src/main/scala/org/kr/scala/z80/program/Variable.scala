@@ -45,7 +45,7 @@ case class ExprIndex(num:List[NumericExpression]) extends Listable {
   def toIndex(environment: Environment):Either[String,Index]={
     val evaluated=num.map(_.evaluate(environment))
     val errors=evaluated.filter(_.isLeft).map(_.swap.toOption.get)
-    val correct=evaluated.filter(_.isRight).map(_.toOption.get).map(_.toInt)
+    val correct=evaluated.filter(_.isRight).map(_.toOption.getOrElse(BigDecimal(0))).map(_.toInt)
 
     if(errors.isEmpty) Right(Index(correct))
     else Left(errors.mkString(";"))

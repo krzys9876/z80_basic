@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, Variable, VariableName}
+import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, READ, REM, RETURN, Variable, VariableName}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -488,7 +488,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.console == List("A\tB","CD\t"))
     }
   }
-  Feature("data statement") {
+  Feature("data and read statements") {
     Scenario("store data using DATA statement") {
       Given("program with data statement")
       val program = new Program(Vector(
@@ -501,6 +501,58 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("data is stored")
       val data=readData(environment)
       assert(data == List(1, 2, "ABC", 5.2))
+    }
+    Scenario("read data using READ statement") {
+      Given("program with read statement and environment with data")
+      val program = new Program(Vector(
+        Line(10, READ("A")),
+        Line(20, READ(Variable("B",ExprIndex.static(List(5))))),
+        Line(30, READ(Variable("C$",ExprIndex.static(List(2,3)))))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+        .storeData(List(1.2,3.4,"abc"))
+      val environment = initialEnvironment.run(program)
+      Then("data is read to variables")
+      assert(environment.exitCode==ExitCode.PROGRAM_END)
+      assert(environment.getValue("A").contains(1.2))
+      assert(environment.getValue(Variable("B",ExprIndex.static(List(5)))).contains(3.4))
+      assert(environment.getValue(Variable("C$",ExprIndex.static(List(2,3)))).contains("abc"))
+    }
+    Scenario("store and read data using DATA and  READ statements (static index)") {
+      Given("program with read statement before data statements")
+      val program = new Program(Vector(
+        Line(10, READ("A")),
+        Line(20, READ(Variable("B",ExprIndex.static(List(10,2))))),
+        Line(30, READ(Variable("C$",ExprIndex.static(List(6))))),
+        Line(40, DATA(List(2.3,4.5,"QWE")))
+      ))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("data is read to variables")
+      assert(environment.exitCode==ExitCode.PROGRAM_END)
+      assert(environment.getValue("A").contains(2.3))
+      assert(environment.getValue(Variable("B",ExprIndex.static(List(10,2)))).contains(4.5))
+      assert(environment.getValue(Variable("C$",ExprIndex.static(List(6)))).contains("QWE"))
+    }
+    Scenario("store and read data using DATA and READ statements (variable index)") {
+      Given("program with read statement before data statements")
+      val program = new Program(Vector(
+        Line(10, READ("I")),
+        Line(20, READ(Variable(VariableName("A"),ExprIndex(List(ExprVariable("I")))))),
+        Line(30, READ(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(1))))))),
+        Line(40, READ(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(2))))))),
+        Line(50, DATA(List(BigDecimal(1),BigDecimal(2.3),BigDecimal(4.5),BigDecimal(6.7))))
+      ))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("data is read to variables")
+      assert(environment.exitCode==ExitCode.PROGRAM_END)
+      assert(environment.getValue(Variable("A",ExprIndex.static(List(1)))).contains(2.3))
+      assert(environment.getValue(Variable("A",ExprIndex.static(List(2)))).contains(4.5))
+      assert(environment.getValue(Variable("A",ExprIndex.static(List(3)))).contains(6.7))
     }
   }
 

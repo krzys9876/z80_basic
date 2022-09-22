@@ -34,6 +34,7 @@ object Main extends App {
     LineParser.force("330 NEXT"),
     LineParser.force("340 PRINT"),
     LineParser.force("350 RETURN"),
+    LineParser.force("500 DATA 11,12,13,14,15"),
     LineParser.force("1000 PRINT \"the program ends here\""),
   ))
   program.show()

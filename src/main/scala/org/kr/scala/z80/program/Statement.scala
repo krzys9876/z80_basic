@@ -8,7 +8,19 @@ import scala.util.Try
 
 trait Statement extends Listable {
   override def list: String
-  def execute(program: Program, environment: Environment): Environment
+  //Normal execution
+  def execute(program: Program, environment: Environment): Environment=environment
+  //Pre-process (e.g. data statements)
+  def preprocess(program: Program, environment: Environment): Environment=environment
+}
+
+object Statement {
+  type processLineType=(Statement, Program, Environment) => Environment
+
+  def execute(statement:Statement, program: Program, environment: Environment): Environment=
+    statement.execute(program,environment)
+  def preprocess(statement:Statement, program: Program, environment: Environment): Environment=
+    statement.preprocess(program,environment)
 }
 
 case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:Option[NumericExpression]) extends Statement {
@@ -172,6 +184,16 @@ case class DIM(variableStatic: VariableStatic) extends Statement {
 }
 
 case class DATA(values:List[Any]) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = environment.storeData(values)
+  override def preprocess(program: Program, environment: Environment): Environment = environment.storeData(values)
   override def list: String = f"DATA ${values.mkString(",")}"
+}
+
+case class READ(variable:Variable) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = {
+    environment.readData match {
+      case Left(code)=>environment.setExitCode(code)
+      case Right((env,value))=>env.setValue(variable,value)
+    }
+  }
+  override def list: String = f"READ ${variable.list}"
 }
