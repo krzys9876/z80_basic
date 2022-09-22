@@ -6,9 +6,9 @@ class Program(val srcLines: Vector[Line]) {
   val lines:Vector[Line] = srcLines.sortBy(_.number.num)
   def show(): Unit = lines.foreach(line => println(line.list))
 
-  def firstLineNumber: Either[ExitCode,LineNumber] =
+  def firstStatement: Either[ExitCode,StatementId] =
     if (lines.isEmpty) Left(ExitCode.PROGRAM_END)
-    else Right(lines(0).number)
+    else Right(StatementId(lines(0).number,0))
 
   private def lineAfter(line: Line): Either[ExitCode,Line] = {
     val index = lines.indexOf(line)
@@ -19,27 +19,47 @@ class Program(val srcLines: Vector[Line]) {
     }
   }
 
-  def lineAfter(lineNum: LineNumber): Either[ExitCode,Line] = {
+  def lineAfter(lineNum: StatementId): Either[ExitCode,Line] = {
     lineByNum(lineNum) match {
       case Left(code)=>Left(code)
       case Right(line)=>lineAfter(line)
     }
   }
 
-  def lineNumAfter(line: Line): Either[ExitCode,LineNumber] =
+  def lineNumAfter(line: Line): Either[ExitCode,StatementId] =
     lineAfter(line) match {
-      case Right(line)=>Right(line.number)
+      case Right(line)=>Right(StatementId(line.number,0))
       case Left(code)=>Left(code)
     }
 
-  def lineByNum(lineNum: LineNumber): Either[ExitCode,Line] =
+  def statementAfter(statementId: StatementId): Either[ExitCode,StatementId] =
+    lineByNum(statementId) match {
+      case Left(code)=>Left(code)
+      case Right(line) if statementId.statementNum<line.statementCount-1 => Right(statementId.nextSameLine)
+      case Right(line)=>
+        lineAfter(line) match {
+          case Left(code)=>Left(code)
+          case Right(line)=>Right(StatementId(line.number,0))
+        }
+    }
+
+  def lineByNum(lineNum: StatementId): Either[ExitCode,Line] =
     lines
-      .find(_.number == lineNum).map(Right(_))
+      .find(_.number == lineNum.lineNumber).map(Right(_))
       .getOrElse(Left(ExitCode.FATAL_LINE_NOT_FOUND))
 
-  def getNextFor(variable: Variable, from: LineNumber): Option[LineNumber] = {
+  def statementById(statementId: StatementId): Either[ExitCode,(Statement,Line)] = {
+    lines.find(_.number == statementId.lineNumber) match {
+      case Some(line) if statementId.statementNum<line.statementCount =>
+        Right((line.statements(statementId.statementNum),line))
+      case None => Left(ExitCode.FATAL_LINE_NOT_FOUND)
+    }
+  }
+
+
+  def getNextFor(variable: Variable, from: StatementId): Option[LineNumber] = {
     val forLineIndex = lines
-      .find(_.number == from)
+      .find(l=>StatementId(l.number) == from)
       .map(lines.indexOf).getOrElse(-1)
     forLineIndex match {
       case index if index >= 0 =>

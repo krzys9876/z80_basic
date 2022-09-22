@@ -144,8 +144,8 @@ case class LET(assignment: AssignmentBase) extends Statement {
 
 case class GOTO(toLine:LineNumber) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    program.lineByNum(toLine) match {
-      case Right(line) => environment.forceNextLine(line.number)
+    program.lineByNum(StatementId(toLine)) match {
+      case Right(line) => environment.forceNextLine(StatementId(line.number))
       case Left(code) => environment.setExitCode(code)
     }
   }
@@ -165,8 +165,8 @@ case class IF(condition:NumericExpression,statement: Statement) extends Statemen
 
 case class GOSUB(toLine:LineNumber) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
-    program.lineByNum(toLine) match {
-      case Right(_) => environment.pushLine(toLine)
+    program.lineByNum(StatementId(toLine)) match {
+      case Right(_) => environment.pushLine(StatementId(toLine))
       case Left(code) => environment.setExitCode(code)
     }
   }

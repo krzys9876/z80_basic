@@ -18,14 +18,33 @@ object LineNumber {
   implicit def fromInt(num:Int):LineNumber = LineNumber(num)
 }
 
-case class Line(number: LineNumber, statement: Statement) extends Listable {
-  override def list: String = f"$number ${statement.list}"
+case class Line(number: LineNumber, statements: Vector[Statement]) extends Listable {
+  override def list: String = f"$number ${statements.map(_.list).mkString(":")}"
 
-  def execute(program: Program, env: Environment, runFunction:Statement.processLineType): Environment =
-    runFunction(statement, program, env.setLine(number))
+  def execute(program: Program, env: Environment, id:StatementId, runFunction:Statement.processLineType): Environment =
+    runFunction(statements(id.statementNum), program, env)
 
   def isNextFor(variable: Variable): Boolean =
-    statement.isInstanceOf[NEXT] && statement.asInstanceOf[NEXT].isNextFor(variable)
+    statements.exists(stmt=>stmt.isInstanceOf[NEXT] && stmt.asInstanceOf[NEXT].isNextFor(variable))
+
+  def statementCount:Int=statements.length
+}
+
+
+object Line {
+  def apply(number:LineNumber, statement:Statement)=new Line(number,Vector(statement))
+}
+
+case class StatementId(lineNumber: LineNumber, statementNum: Int) {
+  def isBefore(other:StatementId):Boolean = {
+    lineNumber.num<other.lineNumber.num ||
+    (lineNumber.num==other.lineNumber.num && statementNum<other.statementNum)
+  }
+  def nextSameLine:StatementId=copy(statementNum=statementNum+1)
+}
+
+object StatementId {
+  def apply(lineNumber: LineNumber):StatementId = new StatementId(lineNumber,0)
 }
 
 abstract class AssignmentBase(val variable: Variable, val expression: Expression) extends Listable {
