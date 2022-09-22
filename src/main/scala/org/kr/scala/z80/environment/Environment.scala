@@ -73,9 +73,9 @@ case class Environment(
   def initFor(variable:Variable, value:BigDecimal, start:BigDecimal, end:BigDecimal, step:BigDecimal):Environment =
     getCurrentStatement match {
       case None=>setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
-      case Some(lineNum)=>
+      case Some(statement)=>
         setValue(variable, value)
-          .setForStack(variable,lineNum,start,end,step)
+          .setForStack(variable,statement,start,end,step)
     }
 
   def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setValue(variable, nextValue)
@@ -85,9 +85,9 @@ case class Environment(
       case None => setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
       case Some(lineNum) =>
         program.getNextFor(variable, lineNum) match {
-          case Some(nextLine) => this
+          case Some(nextStatement) => this
             .finishForStack(variable)
-            .forceNextLine(StatementId(nextLine)) // end of loop
+            .forceNextLine(nextStatement) // end of loop
           case None => setExitCode(ExitCode.MISSING_NEXT)
         }
     }

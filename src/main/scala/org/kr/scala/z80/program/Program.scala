@@ -57,17 +57,19 @@ class Program(val srcLines: Vector[Line]) {
   }
 
 
-  def getNextFor(variable: Variable, from: StatementId): Option[LineNumber] = {
-    val forLineIndex = lines
-      .find(l=>StatementId(l.number) == from)
-      .map(lines.indexOf).getOrElse(-1)
+  def getNextFor(variable: Variable, from: StatementId): Option[StatementId] = {
+    val forLineIndex = lines.indexWhere(_.number==from.lineNumber)
     forLineIndex match {
       case index if index >= 0 =>
+        val isNextList=
         lines
           .slice(forLineIndex, lines.length)
-          .find(_.isNextFor(variable))
-          .map(_.number)
-          //.flatMap(lineNumAfter)
+          .flatMap(_.isNextFor(variable))
+
+        val res=isNextList
+          .map({case(line,index)=>StatementId(line.number,index)})
+          .headOption
+        res
       case _ => None
     }
   }

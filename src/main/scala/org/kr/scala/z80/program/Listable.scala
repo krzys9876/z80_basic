@@ -24,8 +24,11 @@ case class Line(number: LineNumber, statements: Vector[Statement]) extends Lista
   def execute(program: Program, env: Environment, id:StatementId, runFunction:Statement.processLineType): Environment =
     runFunction(statements(id.statementNum), program, env)
 
-  def isNextFor(variable: Variable): Boolean =
-    statements.exists(stmt=>stmt.isInstanceOf[NEXT] && stmt.asInstanceOf[NEXT].isNextFor(variable))
+  def isNextFor(variable: Variable): Option[(Line,Int)] =
+    statements.indexWhere(stmt=>stmt.isInstanceOf[NEXT] && stmt.asInstanceOf[NEXT].isNextFor(variable)) match {
+      case -1=>None
+      case i=>Some((this,i))
+    }
 
   def statementCount:Int=statements.length
 }
