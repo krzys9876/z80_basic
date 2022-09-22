@@ -593,5 +593,17 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue("A").contains(100))
       assert(environment.getValue("B").contains(110))
     }
+    Scenario("multiple statements in one line with for loop") {
+      Given("program with multiple statements in one line and for loop")
+      val program = new Program(Vector(
+        Line(LineNumber(10), Vector(PRINT(StaticTextExpr("START")),FOR(NumericAssignment("I",ExprNumber(1)),ExprNumber(2)))),
+        Line(LineNumber(20), Vector(PRINT("I"),NEXT("I"),PRINT(StaticTextExpr("END"))))))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("console contains printed output")
+      assert(environment.getCurrentStatement.contains(StatementId(20,2)))
+      assert(environment.console.contains(List("START\n","1\n","2\n","END\n")))
+    }
   }
 }
