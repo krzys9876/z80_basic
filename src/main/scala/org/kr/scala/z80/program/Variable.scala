@@ -72,8 +72,9 @@ case class Index(dimensions: List[Int]) extends Listable {
     sameLength(sizeIndex) && indexLessThanSize(sizeIndex)
   }
   private def sameLength(sizeIndex: Index):Boolean = length==sizeIndex.length
+  // According to documetation - minimum index=0, maximum is set by DIM (or default=10), hence >= not >
   private def indexLessThanSize(sizeIndex: Index):Boolean =
-    dimensions.zip(sizeIndex.dimensions).forall({case(index,size)=>size>index && index>=0})
+    dimensions.zip(sizeIndex.dimensions).forall({case(index,size)=> size>=index && index>=0})
 
   def length:Int=dimensions.length
   def isEmpty:Boolean=dimensions.isEmpty
