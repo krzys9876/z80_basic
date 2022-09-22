@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -22,16 +22,16 @@ trait CommonParser extends JavaTokenParsers {
 
 // avoid circular inheritance (IfParser cannot inherit from StatementParser, which must inherit from IfParser)
 trait StatementWithoutIfParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
-  with LetParser with GotoParser with GosubParser with ReturnParser {
-  def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_
+  with LetParser with GotoParser with GosubParser with ReturnParser with DimParser {
+  def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_ | dim
 }
 
 trait RemParser extends CommonParser {
-  def rem:Parser[REM] = "REM" ~ (anyText | emptyString) ^^ {case _ ~ t => REM(t)}
+  def rem:Parser[REM] = "REM" ~> (anyText | emptyString) ^^ {t => REM(t)}
 }
 
 trait PrintParser extends CommonParser with NumericExpressionParser {
-  def print:Parser[PRINT] = "PRINT" ~ opt(tokens) ^^ {case _ ~ t => PRINT(t.getOrElse(List()).toVector)}
+  def print:Parser[PRINT] = "PRINT" ~> opt(tokens) ^^ {t => PRINT(t.getOrElse(List()).toVector)}
 
   private def staticTextExpr:Parser[StaticTextExpr] = anyTextQuoted ^^ StaticTextExpr
   private def token:Parser[Expression]=numericExpression | staticTextExpr
@@ -53,8 +53,8 @@ trait VariableParser extends CommonParser {
 
 trait NextParser extends CommonParser with VariableParser {
   def next:Parser[NEXT] =
-    "NEXT" ~ numVariable ^^ {case _ ~ v => NEXT(Some(v))} |
-      "NEXT" ~ emptyString ^^ {_ => NEXT()}
+    "NEXT" ~> numVariable ^^ {v => NEXT(Some(v))} |
+      "NEXT" ~> emptyString ^^ {_ => NEXT()}
 }
 
 trait ForParser extends CommonParser with VariableParser with AssignmentParser {
@@ -79,11 +79,11 @@ trait AssignmentParser extends VariableParser with NumericExpressionParser {
 
 trait LetParser extends AssignmentParser {
   def let:Parser[LET] = (textAssignment | numericArrayAssignment | numericAssignment) ^^ {LET(_)} |
-    "LET" ~ (textAssignment | numericArrayAssignment | numericAssignment) ^^ {case _ ~ a => LET(a)}
+    "LET" ~> (textAssignment | numericArrayAssignment | numericAssignment) ^^ {LET(_)}
 }
 
 trait GotoParser extends CommonParser {
-  def goto:Parser[GOTO] = "GOTO" ~ integerNumber ^^ {case _ ~ l => GOTO(l.toInt)}
+  def goto:Parser[GOTO] = "GOTO" ~> integerNumber ^^ {l => GOTO(l.toInt)}
 }
 
 trait IfParser extends CommonParser with NumericExpressionParser with StatementWithoutIfParser {
@@ -94,9 +94,16 @@ trait IfParser extends CommonParser with NumericExpressionParser with StatementW
 }
 
 trait GosubParser extends CommonParser {
-  def gosub:Parser[GOSUB] = "GOSUB" ~ integerNumber ^^ {case _ ~ l => GOSUB(l.toInt)}
+  def gosub:Parser[GOSUB] = "GOSUB" ~> integerNumber ^^ {l => GOSUB(l.toInt)}
 }
 
 trait ReturnParser extends CommonParser {
   def return_ :Parser[RETURN] = "RETURN" ^^ {_ => RETURN()}
+}
+
+trait DimParser extends CommonParser with VariableParser {
+  def dim :Parser[DIM] = "DIM" ~> numVariable ~ ("(" ~> staticIndex <~ ")") ^^ {case v ~ i  => DIM(v.asStatic(Index(i)))}
+
+  def staticIndexSingle:Parser[Int]=integerNumber ^^ {_.toInt}
+  def staticIndex:Parser[List[Int]]=rep1sep(staticIndexSingle,",")
 }

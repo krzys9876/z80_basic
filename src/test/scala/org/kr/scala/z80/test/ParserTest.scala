@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.parser.LineParser
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Variable}
+import org.kr.scala.z80.program.{Assignment, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Variable, VariableName, VariableStatic}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -186,4 +186,13 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
       assert(LineParser("20 IF I=5 THEN 30").contains(Line(20, IF(ExprOperation.eq("I", 5), GOTO(30)))))
     }
   }
+  Feature("parse DIM line") {
+    Scenario("parse DIM") {
+      assert(LineParser("10 DIM A(20,30)").contains(Line(10,DIM(VariableStatic(VariableName("A"),Index(List(20,30)))))))
+      assert(LineParser("20 DIM B(2)").contains(Line(20,DIM(VariableStatic(VariableName("B"),Index(List(2)))))))
+      assert(LineParser("30 DIM C(10,20,30,40,50,60)").contains(
+        Line(30,DIM(VariableStatic(VariableName("C"),Index(List(10,20,30,40,50,60)))))))
+    }
+  }
+
 }
