@@ -121,5 +121,15 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
       assert(env.getValue(index2).contains(200))
     }
   }
+  Feature("default variable values") {
+    Scenario("read undeclared variables of different types") {
+      Given("empty environment")
+      val env=Environment.empty
+        //.setValue("A",0)
+      When("a numeric variable is read")
+      Then("its value is 0")
+      assert(env.getValue("A").contains(0))
+    }
+  }
 }
 

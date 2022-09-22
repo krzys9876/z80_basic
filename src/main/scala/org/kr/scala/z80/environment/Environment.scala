@@ -1,6 +1,7 @@
 package org.kr.scala.z80.environment
 
-import org.kr.scala.z80.program.{LineNumber, Program, Variable}
+import org.kr.scala.z80.program.{LineNumber, Program, Variable, VariableStatic}
+
 import scala.annotation.tailrec
 import scala.math.BigDecimal
 
@@ -22,6 +23,9 @@ case class Environment(
     variables.value(variable,this)
   def getValueAs[T](variable: Variable):Either[ExitCode,T]=
     variables.value(variable,this).map(_.asInstanceOf[T])
+  def setArrayDim(variableStatic: VariableStatic):Environment =
+    copy(variables=variables.setArrayDim(variableStatic))
+
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
   def setForStack(variable:Variable, line:LineNumber,

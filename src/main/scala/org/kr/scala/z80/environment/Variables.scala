@@ -5,17 +5,20 @@ import org.kr.scala.z80.program.{Index, Variable, VariableName, VariableStatic}
 import scala.language.implicitConversions
 
 case class Variables(values:Map[VariableStatic,Any], dimensions:Map[VariableName,Index]) {
-  def value(variable: VariableName):Option[Any]=values.get(VariableStatic(variable))
-  //TODO: convert Option to Either
   def value(variable: Variable, environment: Environment):Either[ExitCode,Any]= {
     variable.evaluateIndex(environment) match {
       case Left(code) => Left(code)
       case Right(index) =>
-        checkDimensions(variable.variable) match {
-          case Some(dim) if index.fitsSize(dim) =>
-            get(Variable.asStatic(variable.variable,index))
-          case None => Left(ExitCode.INVALID_ARRAY_INDEX)
-          case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
+        checkDimensions(variable.name) match {
+          // get a value of a variable that was previously stored
+          case Some(dim) if index.fitsSize(dim) => Right(get(variable,index))
+          // get a default value
+          //NOTE: it is possible to get a default value from array of the same name but different dimensions
+          //but this is a minor issue and resolving it would require that reading a value from uninitialized variable
+          // would require environment to change (add dimension)
+          case None => Right(get(variable,index))
+          // invalid index of previously stored array
+          case Some(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
   }
@@ -24,7 +27,7 @@ case class Variables(values:Map[VariableStatic,Any], dimensions:Map[VariableName
     variable.evaluateIndex(environment) match {
       case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
       case Right(index) =>
-        checkDimensions(variable.variable) match {
+        checkDimensions(variable.name) match {
           case None =>
             Right(storeValue(variable, index, valueToStore)
               .storeDimensions(variable))
@@ -32,17 +35,15 @@ case class Variables(values:Map[VariableStatic,Any], dimensions:Map[VariableName
           case _ => Left(ExitCode.INVALID_ARRAY_INDEX)
         }
     }
+  def setArrayDim(variableStatic: VariableStatic):Variables =
+    copy(dimensions = dimensions ++ Map(variableStatic.variableName->variableStatic.index) )
 
-  private def get(variableStatic:VariableStatic):Either[ExitCode,Any] =
-    values.get(variableStatic) match {
-      case None => Left(ExitCode.FATAL_CANNOT_GET_VALUE)
-      case Some(v) => Right(v)
-    }
-
+  private def get(variable:Variable,index:Index):Any =
+    values.getOrElse(variable.asStatic(index), variable.defaultValue)
   private def storeValue(variable: Variable, evaluatedIndex:Index, valueToStore:Any):Variables=
-    copy(values=values ++ Map(Variable.asStatic(variable.variable,evaluatedIndex) -> valueToStore))
+    copy(values=values ++ Map(variable.asStatic(evaluatedIndex) -> valueToStore))
   private def storeDimensions(variable: Variable):Variables=
-    copy(dimensions=dimensions ++ Map(variable.variable-> Index.blank(variable.length)))
+    copy(dimensions=dimensions ++ Map(variable.name-> Index.blank(variable.length)))
   private def checkDimensions(variable: VariableName):Option[Index] = dimensions.get(variable)
 }
 

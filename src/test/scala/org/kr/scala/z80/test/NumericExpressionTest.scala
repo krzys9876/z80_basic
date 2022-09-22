@@ -39,10 +39,8 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         .setValue("A", BigDecimal(1.0))
       When("evaluated")
       val eVal = e.valueNum(env)
-      val eErr = e.evaluate(env)
-      Then("returns error message and empty value")
-      assert(eVal.isEmpty)
-      assert(eErr.isLeft)
+      Then("returns default values")
+      assert(eVal.contains(0))
     }
   }
   Feature("evaluate complex expressions") {
@@ -115,10 +113,9 @@ class NumericExpressionTest extends AnyFeatureSpec with GivenWhenThen {
         .setValue("Y",BigDecimal(1))
       When("evaluated")
       val eVal=e.valueNum(env)
-      val eErr=e.evaluate(env)
-      Then("return error")
-      assert(eVal.isEmpty)
-      assert(eErr.isLeft)
+      Then("non-existing variable gets default value")
+      And("expression is evaluated")
+      assert(eVal.contains(1.0))
     }
     Scenario("evaluate functions (numbers only)") {
       Given("expressions representing functions (e.g. SIN, COS, negation etc.)")

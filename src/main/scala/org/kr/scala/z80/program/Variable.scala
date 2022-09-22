@@ -5,30 +5,34 @@ import org.kr.scala.z80.expression.{ExprNumber, NumericExpression}
 
 import scala.language.implicitConversions
 
-case class Variable(variable:VariableName, index:ExprIndex) extends Listable {
+case class Variable(name:VariableName, index:ExprIndex) extends Listable {
   def length:Int=index.num.length
   def evaluateIndex(environment: Environment):Either[ExitCode,Index] =
     index.toIndex(environment) match {
       case Left(_) => Left(ExitCode.INVALID_ARRAY_INDEX)
       case Right(i) => Right(i)
     }
+  def asStatic(index:Index):VariableStatic = new VariableStatic(name, Index(index.dimensions))
+  def defaultValue:Any=if(name.isText) "" else BigDecimal(0)
 
-  override def list: String = f"${variable.list}${index.list}"
+  override def list: String = f"${name.list}${index.list}"
 }
 
 object Variable {
   def apply(variable: VariableName):Variable = new Variable(variable,ExprIndex.empty)
   def apply(name:String,index:ExprIndex):Variable = new Variable(VariableName(name),index)
   implicit def fromString(name:String):Variable = Variable(VariableName(name))
-  def asStatic(variable: VariableName, index:Index):VariableStatic =
-    new VariableStatic(variable, Index(index.dimensions))
 }
 
 case class VariableName(name:String) extends Listable {
+  def isNumeric:Boolean= !isText
+  def isText:Boolean=name.endsWith("$")
   override def list: String = name
 }
 
-case class VariableStatic(variableName: VariableName, index: Index)
+case class VariableStatic(variableName: VariableName, index: Index) extends Listable {
+  override def list: String = f"${variableName.list}${index.list}"
+}
 
 object VariableStatic {
   def apply(variableName: VariableName):VariableStatic=new VariableStatic(variableName,Index.empty)

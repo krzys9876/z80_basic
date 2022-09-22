@@ -47,7 +47,7 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
     }
 
   private def finishFor(program: Program,environment: Environment):Environment = environment.finishFor(program,assignment.variable)
-  override def list: String = f"FOR ${assignment.variable.variable.name} = " +
+  override def list: String = f"FOR ${assignment.variable.name.name} = " +
     f"${assignment.expression.list} TO ${endValue.list}" +
     step.map(s=>f" STEP ${s.list}").getOrElse("")
 }
@@ -164,4 +164,9 @@ case class GOSUB(toLine:LineNumber) extends Statement {
 case class RETURN() extends Statement {
   override def execute(program: Program, environment: Environment): Environment = environment.popLine(program)
   override def list: String = f"RETURN"
+}
+
+case class DIM(variableStatic: VariableStatic) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = environment.setArrayDim(variableStatic)
+  override def list: String = f"DIM${variableStatic.list}"
 }

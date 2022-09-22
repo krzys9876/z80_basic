@@ -261,7 +261,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("the loop is not executed")
       And("program ends with error - missing next statement")
       assert(environment.getCurrentLine.contains(LineNumber(10)))
-      assert(environment.getValue("I").isLeft)
+      assert(environment.getValue("I").contains(0))
       assert(environment.exitCode == ExitCode.MISSING_NEXT)
       assert(environment.console.isEmpty)
     }
