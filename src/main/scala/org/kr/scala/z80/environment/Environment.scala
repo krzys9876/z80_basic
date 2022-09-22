@@ -10,7 +10,7 @@ case class Environment(
                    private val data:Data,
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
-                   console:Vector[String],
+                   console:EnvConsole,
                    exitCode:ExitCode=ExitCode.NORMAL,
                    nextLineNum:Option[LineNumber]=None) {
   def setValue(variable: Variable, value:Any):Environment=
@@ -134,12 +134,11 @@ case class Environment(
     }
   }
 
-  //TODO: create separate class with console and enable dynamic printing to screen
-  def consolePrint(text:String):Environment=copy(console=console++Vector(text))
-  def consolePrintln(text:String):Environment=copy(console=console++Vector(text+"\n"))
+  def consolePrint(text:String):Environment=copy(console=console.add(text,show = true))
+  def consolePrintln(text:String):Environment=copy(console=console.add(text+"\n",show = true))
 
   def showConsole():Environment = {
-    println(console.mkString(""))
+    console.show()
     this
   }
   def showExitCode():Environment = {
@@ -154,5 +153,20 @@ case class Environment(
 }
 
 object Environment {
-  def empty:Environment=new Environment(Variables.empty,Data.empty,ForStack.empty,LineStack.empty,Vector())
+  def empty:Environment=new Environment(Variables.empty,Data.empty,ForStack.empty,LineStack.empty,EnvConsole.empty)
+}
+
+case class EnvConsole(lines:Vector[String]) {
+  def add(text:String,show:Boolean):EnvConsole = {
+    if(show) print(text)
+    copy(lines = lines :+ text)
+  }
+  def show():Unit = println(lines.mkString(""))
+  lazy val isEmpty:Boolean = lines.isEmpty
+  def contains(list:List[String]):Boolean =
+    lines.length==list.length && lines.zip(list).forall({case(console,check)=>console==check})
+}
+
+object EnvConsole {
+  def empty:EnvConsole=new EnvConsole(Vector())
 }

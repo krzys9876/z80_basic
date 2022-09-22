@@ -4,10 +4,34 @@ import org.kr.scala.z80.environment.Environment
 import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.Program
 
+import java.nio.file.{Files, Path}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 object Main extends App {
   println("START")
 
-  val program=new Program(Vector(
+  val program=args.length match {
+    case 0 =>
+      println("No arguments found, using dummy program.")
+      DummyProgram.program
+    case 1 =>
+      val inputFile=Files.readAllLines(Path.of(args(0))).asScala.toVector
+      new Program(inputFile.map(LineParser.force))
+  }
+
+  program.show()
+  println()
+
+  Environment.empty
+    .run(program)
+    .showCurrentLine()
+    .showExitCode()
+
+  println("END")
+}
+
+object DummyProgram {
+  val program= new Program(Vector(
     LineParser.force("5 REM assign some values to an array"),
     LineParser.force("8 DIM A(25)"),
     LineParser.force("10 FOR I=1 TO 5"),
@@ -37,14 +61,4 @@ object Main extends App {
     LineParser.force("500 DATA 11,12,13,14,15"),
     LineParser.force("1000 PRINT \"the program ends here\""),
   ))
-  program.show()
-  println()
-
-  Environment.empty
-    .run(program)
-    .showConsole()
-    .showCurrentLine()
-    .showExitCode()
-
-  println("END")
 }
