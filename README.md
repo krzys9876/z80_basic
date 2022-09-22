@@ -22,9 +22,9 @@ We'll see what's going to come up from this :)
 
 <img src="https://img.shields.io/badge/GOSUB / RETURN-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/DIM / Arrays-In progress-blue.svg"/></a>
+<img src="https://img.shields.io/badge/DIM / Arrays-Done-green.svg"/></a>
 
-<img src="https://img.shields.io/badge/DATA / READ-Planned-lightgray.svg"/></a>
+<img src="https://img.shields.io/badge/DATA / READ-In progress-blue.svg"/></a>
 
 This should be enough to run tic-tac-toe (10x10) game, which was a test program for Z80 simulator. 
 
