@@ -168,5 +168,10 @@ case class RETURN() extends Statement {
 
 case class DIM(variableStatic: VariableStatic) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = environment.setArrayDim(variableStatic)
-  override def list: String = f"DIM${variableStatic.list}"
+  override def list: String = f"DIM ${variableStatic.list}"
+}
+
+case class DATA(values:List[Any]) extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = environment.storeData(values)
+  override def list: String = f"DATA ${values.mkString(",")}"
 }

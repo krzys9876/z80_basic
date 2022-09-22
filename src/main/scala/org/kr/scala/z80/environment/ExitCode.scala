@@ -14,4 +14,5 @@ object ExitCode {
   case object MISSING_FOR extends ExitCode {override def toString: String = "MISSING_FOR"}
   case object MISSING_RETURN_LINE extends ExitCode {override def toString: String = "MISSING_RETURN_LINE"}
   case object INVALID_ARRAY_INDEX extends ExitCode {override def toString: String = "INVALID_ARRAY_INDEX"}
+  case object OUT_OF_DATA extends ExitCode {override def toString: String = "OUT_OF_DATA"}
 }

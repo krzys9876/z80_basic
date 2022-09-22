@@ -9,8 +9,9 @@ object Main extends App {
 
   val program=new Program(Vector(
     LineParser.force("5 REM assign some values to an array"),
+    LineParser.force("8 DIM A(25)"),
     LineParser.force("10 FOR I=1 TO 5"),
-    LineParser.force("20 LET A(I)=(123.456+I)^I"),
+    LineParser.force("20 LET A(20+I)=(123.456+I)^I"),
     LineParser.force("30 NEXT"),
     LineParser.force("35 REM print values in a subroutine"),
     LineParser.force("40 FOR J=1 TO 10 STEP 1.5"),
@@ -27,9 +28,9 @@ object Main extends App {
     LineParser.force("230 IF J=10 THEN PRINT \" last\";"),
     LineParser.force("240 PRINT"),
     LineParser.force("250 RETURN"),
-    LineParser.force("300 FOR K=1 TO 5"),
+    LineParser.force("300 FOR K=21 TO 25"),
     LineParser.force("310 V=A(K)+K^2"),
-    LineParser.force("320 PRINT K;\":\";V;\"|\";"),
+    LineParser.force("320 PRINT K-20;\":\";V;\"|\";"),
     LineParser.force("330 NEXT"),
     LineParser.force("340 PRINT"),
     LineParser.force("350 RETURN"),

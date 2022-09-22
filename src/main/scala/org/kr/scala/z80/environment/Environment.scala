@@ -7,6 +7,7 @@ import scala.math.BigDecimal
 
 case class Environment(
                    private val variables:Variables,
+                   private val data:Data,
                    private val forStack:ForStack,
                    private val lineStack:LineStack,
                    console:Vector[String],
@@ -25,6 +26,13 @@ case class Environment(
     variables.value(variable,this).map(_.asInstanceOf[T])
   def setArrayDim(variableStatic: VariableStatic):Environment =
     copy(variables=variables.setArrayDim(variableStatic))
+
+  def readData:Either[ExitCode,(Environment,Any)] =
+    data.read match {
+      case (Left(code),_) => Left(code)
+      case (Right(value),newData)=>Right(copy(data=newData),value)
+    }
+  def storeData(values:List[Any]):Environment = copy(data=data.store(values))
 
   def setLine(num:LineNumber):Environment= copy(lineStack = lineStack.changeTopTo(num))
   def forceNextLine(num:LineNumber):Environment= copy(nextLineNum = Some(num))
@@ -139,6 +147,19 @@ case class Environment(
 }
 
 object Environment {
-  def empty:Environment=new Environment(Variables.empty,ForStack.empty,LineStack.empty,Vector())
+  def empty:Environment=new Environment(Variables.empty,Data.empty,ForStack.empty,LineStack.empty,Vector())
 }
 
+case class Data(values:Vector[Any],pos:Int) {
+  def read:(Either[ExitCode,Any],Data) = {
+    if(pos>=values.length) (Left(ExitCode.OUT_OF_DATA),this)
+    else (Right(values(pos)),nextPos)
+  }
+  def store(valuesToStore:List[Any]):Data = copy(values=values ++ valuesToStore)
+  private def nextPos:Data=copy(pos=pos+1)
+  def reset:Data=copy(pos=0)
+}
+
+object Data {
+  def empty:Data=new Data(Vector(),0)
+}

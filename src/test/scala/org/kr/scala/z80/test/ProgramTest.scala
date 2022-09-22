@@ -2,11 +2,13 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, VariableName, Variable}
+import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, REM, RETURN, Variable, VariableName}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
 import org.kr.scala.z80.expression.ExprVariable._
+
+import scala.annotation.tailrec
 
 class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
   Feature("Run dummy program line by line") {
@@ -486,4 +488,26 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.console == List("A\tB","CD\t"))
     }
   }
+  Feature("data statement") {
+    Scenario("store data using DATA statement") {
+      Given("program with data statement")
+      val program = new Program(Vector(
+        Line(10, DATA(List(1,2))),
+        Line(20, DATA(List("ABC",5.2)))
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("data is stored")
+      val data=readData(environment)
+      assert(data == List(1, 2, "ABC", 5.2))
+    }
+  }
+
+  @tailrec
+  private def readData(env:Environment, accumList:List[Any]=List()):List[Any] =
+    env.readData match {
+      case Left(_) => accumList
+      case Right((newEnv,value)) => readData(newEnv,accumList :+ value)
+    }
 }

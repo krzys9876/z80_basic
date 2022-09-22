@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
 import org.kr.scala.z80.parser.LineParser
-import org.kr.scala.z80.program.{Assignment, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Variable, VariableName, VariableStatic}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Variable, VariableName, VariableStatic}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -194,5 +194,9 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30,DIM(VariableStatic(VariableName("C"),Index(List(10,20,30,40,50,60)))))))
     }
   }
-
+  Feature("parse DATA line") {
+    Scenario("parse DATA") {
+      assert(LineParser("10 DATA 1, \"q , we\" ,2.3, abc, 13.1").contains(Line(10,DATA(List(1,"q , we",2.3,"abc",13.1)))))
+    }
+  }
 }

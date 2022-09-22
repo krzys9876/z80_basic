@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, REM, RETURN, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -12,6 +12,7 @@ trait StatementParser extends CommonParser with StatementWithoutIfParser with If
 trait CommonParser extends JavaTokenParsers {
   def integerNumber: Parser[String] = """(\d+)""".r
   def anyText: Parser[String] = """(.*)""".r
+  def anyTextWoComma: Parser[String] = """([^, ]*)""".r
   def anyTextQuoted:Parser[String] = stringLiteral ^^ stripQuotes
   def emptyString:Parser[String] = """(^$)""".r
 
@@ -22,8 +23,9 @@ trait CommonParser extends JavaTokenParsers {
 
 // avoid circular inheritance (IfParser cannot inherit from StatementParser, which must inherit from IfParser)
 trait StatementWithoutIfParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
-  with LetParser with GotoParser with GosubParser with ReturnParser with DimParser {
-  def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_ | dim
+  with LetParser with GotoParser with GosubParser with ReturnParser with DimParser with DataParser {
+  def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_ | dim |
+    data
 }
 
 trait RemParser extends CommonParser {
@@ -103,7 +105,13 @@ trait ReturnParser extends CommonParser {
 
 trait DimParser extends CommonParser with VariableParser {
   def dim :Parser[DIM] = "DIM" ~> numVariable ~ ("(" ~> staticIndex <~ ")") ^^ {case v ~ i  => DIM(v.asStatic(Index(i)))}
+  private def staticIndexSingle:Parser[Int]=integerNumber ^^ {_.toInt}
+  private def staticIndex:Parser[List[Int]]=rep1sep(staticIndexSingle,",")
+}
 
-  def staticIndexSingle:Parser[Int]=integerNumber ^^ {_.toInt}
-  def staticIndex:Parser[List[Int]]=rep1sep(staticIndexSingle,",")
+trait DataParser extends CommonParser {
+  def data :Parser[DATA] = "DATA" ~> listOfValues ^^ DATA
+  private def number[BigDecimal]=floatingPointNumber ^^ {n=>BigDecimal(n.toDouble)}
+  private def dataValue:Parser[Any]=number | anyTextQuoted | anyTextWoComma
+  private def listOfValues:Parser[List[Any]]=rep1sep(dataValue,",")
 }
