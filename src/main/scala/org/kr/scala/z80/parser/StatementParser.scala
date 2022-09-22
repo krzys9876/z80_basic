@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
-import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Statement, Variable}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Statement, Variable, VariableName}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -104,10 +104,8 @@ trait ReturnParser extends CommonParser {
   def return_ :Parser[RETURN] = "RETURN" ^^ {_ => RETURN()}
 }
 
-trait DimParser extends CommonParser with VariableParser {
-  def dim :Parser[DIM] = "DIM" ~> numVariable ~ ("(" ~> staticIndex <~ ")") ^^ {case v ~ i  => DIM(v.asStatic(Index(i)))}
-  private def staticIndexSingle:Parser[Int]=integerNumber ^^ {_.toInt}
-  private def staticIndex:Parser[List[Int]]=rep1sep(staticIndexSingle,",")
+trait DimParser extends CommonParser with NumericExpressionParser {
+  def dim :Parser[DIM] = "DIM" ~> numVariable ~ exprIndex ^^ {case v ~ i  => DIM(Variable(v.name,i))}
 }
 
 trait DataParser extends CommonParser {

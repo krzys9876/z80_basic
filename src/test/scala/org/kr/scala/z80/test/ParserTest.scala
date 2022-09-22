@@ -187,11 +187,14 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
     }
   }
   Feature("parse DIM line") {
-    Scenario("parse DIM") {
-      assert(LineParser("10 DIM A(20,30)").contains(Line(10,DIM(VariableStatic(VariableName("A"),Index(List(20,30)))))))
-      assert(LineParser("20 DIM B(2)").contains(Line(20,DIM(VariableStatic(VariableName("B"),Index(List(2)))))))
+    Scenario("parse DIM with static index") {
+      assert(LineParser("10 DIM A(20,30)").contains(Line(10,DIM(Variable(VariableName("A"),ExprIndex.static(List(20,30)))))))
+      assert(LineParser("20 DIM B(2)").contains(Line(20,DIM(Variable(VariableName("B"),ExprIndex.static(List(2)))))))
       assert(LineParser("30 DIM C(10,20,30,40,50,60)").contains(
-        Line(30,DIM(VariableStatic(VariableName("C"),Index(List(10,20,30,40,50,60)))))))
+        Line(30,DIM(Variable(VariableName("C"),ExprIndex.static(List(10,20,30,40,50,60)))))))
+    }
+    Scenario("parse DIM with dynamic index") {
+      assert(LineParser("10 DIM A(B+1)").contains(Line(10,DIM(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("B"),ExprNumber(1)))))))))
     }
   }
   Feature("parse DATA line") {
@@ -207,6 +210,20 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10,READ(Variable(VariableName("C"),ExprIndex(List(ExprNumber(1),ExprVariable("D"))))))))
       assert(LineParser("10 READ E$(F,2)").contains(
         Line(10,READ(Variable(VariableName("E$"),ExprIndex(List(ExprVariable("F"),ExprNumber(2))))))))
+    }
+  }
+  Feature("parse multiple statements in one line") {
+    Scenario("parse multiple statements") {
+      assert(LineParser("10 A=1:PRINT A:B=2:PRINT B").contains(
+        Line(10,Vector(
+          LET(NumericAssignment("A",ExprNumber(1))),PRINT("A"),
+          LET(NumericAssignment("B",ExprNumber(2))),PRINT("B")))))
+      assert(LineParser("10 A=1:FOR I=1 TO 5:A=A+I:NEXT I").contains(
+        Line(10,Vector(
+          LET(NumericAssignment("A",ExprNumber(1))),
+          FOR(NumericAssignment("I",ExprNumber(1)),ExprNumber(5)),
+          LET(NumericAssignment("A",ExprOperation.plus(ExprVariable("A"),ExprVariable("I")))),
+          NEXT("I")))))
     }
   }
 }

@@ -21,6 +21,7 @@ case class Variable(name:VariableName, index:ExprIndex) extends Listable {
 object Variable {
   def apply(variable: VariableName):Variable = new Variable(variable,ExprIndex.empty)
   def apply(name:String,index:ExprIndex):Variable = new Variable(VariableName(name),index)
+  def apply(name:String):Variable = fromString(name)
   implicit def fromString(name:String):Variable = Variable(VariableName(name))
 }
 

@@ -16,8 +16,15 @@ object Main extends App {
       DummyProgram.program
     case 1 =>
       val inputFile=Files.readAllLines(Path.of(args(0))).asScala.toVector
-      new Program(inputFile.map(LineParser.force))
+      new Program(inputFile.map(l=>{
+        println(f"parsing: $l")
+        LineParser.force(l)
+      }))
   }
+
+  //TODO: READ multiple variables separated with comma
+  //TODO: variable index as value of an array
+  //TODO: implement STOP
 
   program.show()
   println()

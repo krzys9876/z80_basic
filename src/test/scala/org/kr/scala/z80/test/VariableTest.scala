@@ -1,7 +1,7 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode}
-import org.kr.scala.z80.expression.ExprVariable
+import org.kr.scala.z80.expression.{ExprNumber, ExprVariable}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.program.{ExprIndex, Index, Variable, VariableName, VariableStatic}
@@ -122,10 +122,10 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("set array dimensions (DIM)") {
       Given("environment with declared variable dimension greater than default (10)")
-      val indexStatic1=VariableStatic(VariableName("ARR"),Index(List(20,30)))
+      val indexDim1=Variable(VariableName("ARR"),ExprIndex.static(List(20,30)))
       val index1=Variable(VariableName("ARR"),ExprIndex.static(List(18,30)))
       val env=Environment.empty
-        .setArrayDim(indexStatic1)
+        .setArrayDim(indexDim1)
         .setValue(index1,1.0)
       When("a value is read from an array using index greater than default (10)")
       Then("the value is stored to environment")
@@ -133,13 +133,13 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("read valid and invalid array index") {
       Given("environment with declared variable dimension")
-      val indexStatic1=VariableStatic(VariableName("ARR"),Index(List(15,7)))
+      val indexDim1=Variable(VariableName("ARR"),ExprIndex.static(List(15,7)))
       val indexValid1=Variable(VariableName("ARR"),ExprIndex.static(List(15,0)))
       val indexValid2=Variable(VariableName("ARR"),ExprIndex.static(List(0,7)))
       val indexInvalid1=Variable(VariableName("ARR"),ExprIndex.static(List(16,3)))
       val indexInvalid2=Variable(VariableName("ARR"),ExprIndex.static(List(9,8)))
       val env=Environment.empty
-        .setArrayDim(indexStatic1)
+        .setArrayDim(indexDim1)
       When("a value is read from an array using index within declared range")
       Then("default value is returned")
       assert(env.getValue(indexValid1).contains(0))
@@ -151,13 +151,13 @@ class VariableTest extends AnyFeatureSpec with GivenWhenThen {
     }
     Scenario("store valid and invalid array index") {
       Given("environment with declared variable dimension")
-      val indexStatic1=VariableStatic(VariableName("ARR"),Index(List(15,7)))
+      val index1=Variable(VariableName("ARR"),ExprIndex.static(List(15,7)))
       val indexValid1=Variable(VariableName("ARR"),ExprIndex.static(List(15,0)))
       val indexValid2=Variable(VariableName("ARR"),ExprIndex.static(List(0,7)))
       val indexInvalid1=Variable(VariableName("ARR"),ExprIndex.static(List(16,3)))
       val indexInvalid2=Variable(VariableName("ARR"),ExprIndex.static(List(9,8)))
       val env=Environment.empty
-        .setArrayDim(indexStatic1)
+        .setArrayDim(index1)
       When("a value is stored to an array using index within declared range")
       Then("normal exit code is returned")
       assert(env.setValue(indexValid1,1.0).exitCode==ExitCode.NORMAL)

@@ -7,7 +7,6 @@ import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
 import org.kr.scala.z80.expression.ExprVariable._
-
 import scala.annotation.tailrec
 
 class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
@@ -604,6 +603,21 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20,2)))
       assert(environment.console.contains(List("START\n","1\n","2\n","END\n")))
+    }
+    Scenario("multiple statements in one line with gosub") {
+      Given("program with multiple statements in one line and gosub jumps")
+      val program = new Program(Vector(
+        Line(LineNumber(10), Vector(PRINT(1),GOSUB(100),GOSUB(200),GOSUB(300),GOTO(1000))),
+        Line(LineNumber(100), Vector(PRINT(2),RETURN())),
+        Line(LineNumber(200), Vector(PRINT(3),RETURN())),
+        Line(LineNumber(300), Vector(PRINT(4),RETURN())),
+        Line(LineNumber(1000), Vector(PRINT(5)))))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("console contains printed output")
+      assert(environment.getCurrentStatement.contains(StatementId(1000)))
+      assert(environment.console.contains(List("1\n","2\n","3\n","4\n","5\n")))
     }
   }
 }

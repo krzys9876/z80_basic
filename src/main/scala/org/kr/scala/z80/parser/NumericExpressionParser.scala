@@ -43,11 +43,11 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
   private def factor8: PN = factor7 ~ rep(operations7) ^^ {case f ~ op => applyOperations(f, op) }
 
   //Public building blocks
-  def numArray:Parser[Variable]=numVariableName ~ index ^^ {case n ~ i =>Variable(n,i)}
-  def textArray:Parser[Variable]=textVariableName ~ index ^^ {case n ~ i =>Variable(n,i)}
+  def numArray:Parser[Variable]=numVariableName ~ exprIndex ^^ {case n ~ i =>Variable(n,i)}
+  def textArray:Parser[Variable]=textVariableName ~ exprIndex ^^ {case n ~ i =>Variable(n,i)}
   //Private building blocks for hierarchy of operations
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
-  private def index:Parser[ExprIndex]="(" ~> rep1sep(numericExpression,",") <~ ")" ^^ {l => ExprIndex(l)}
+  def exprIndex:Parser[ExprIndex]="(" ~> rep1sep(numericExpression,",") <~ ")" ^^ { l => ExprIndex(l)}
   private def variableExpr:PN=(numArray | numVariable) ^^ (v => ExprVariable(v))
   private def exprParen: PN = "(" ~> numericExpression <~ ")"
   private def func: PN = ("ABS" | "SIN" | "COS" | "INT" | "SQR") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }

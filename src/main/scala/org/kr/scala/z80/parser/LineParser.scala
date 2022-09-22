@@ -17,7 +17,7 @@ abstract class BaseParser[T]() extends JavaTokenParsers {
 }
 
 case class LineParser() extends BaseParser[Line] with CommonParser with LineNumberParser with StatementParser {
-  def result: Parser[Line] = lineNumber ~ statement ^^ { case l ~ s => Line(l, s) }
+  def result: Parser[Line] = lineNumber ~ rep1sep(statement,":") ^^ { case l ~ s => Line(l, s.toVector) }
 }
 
 object LineParser {

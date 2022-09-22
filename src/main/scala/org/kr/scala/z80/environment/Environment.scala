@@ -24,8 +24,12 @@ case class Environment(
     variables.value(variable,this)
   def getValueAs[T](variable: Variable):Either[ExitCode,T]=
     variables.value(variable,this).map(_.asInstanceOf[T])
-  def setArrayDim(variableStatic: VariableStatic):Environment =
-    copy(variables=variables.setArrayDim(variableStatic))
+  def setArrayDim(variable: Variable):Environment = {
+    variable.evaluateIndex(this) match {
+      case Left(code)=>setExitCode(code)
+      case Right(index)=>copy(variables=variables.setArrayDim(VariableStatic(variable.name,index)))
+    }
+  }
 
   def readData:Either[ExitCode,(Environment,Any)] =
     data.read match {
