@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr, TextExprVariable}
-import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, READ, REM, RETURN, StatementId, Variable, VariableName}
+import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, READ, REM, RETURN, STOP, StatementId, Variable, VariableName}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
@@ -528,9 +528,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("read data using READ statement") {
       Given("program with read statement and environment with data")
       val program = new Program(Vector(
-        Line(10, READ("A")),
-        Line(20, READ(Variable("B",ExprIndex.static(List(5))))),
-        Line(30, READ(Variable("C$",ExprIndex.static(List(2,3)))))
+        Line(10, READ(List("A",Variable("B",ExprIndex.static(List(5)))))),
+        Line(20, READ(List(Variable("C$",ExprIndex.static(List(2,3))))))
       ))
       When("program is executed")
       val initialEnvironment = Environment.empty
@@ -545,10 +544,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("store and read data using DATA and  READ statements (static index)") {
       Given("program with read statement before data statements")
       val program = new Program(Vector(
-        Line(10, READ("A")),
-        Line(20, READ(Variable("B",ExprIndex.static(List(10,2))))),
-        Line(30, READ(Variable("C$",ExprIndex.static(List(6))))),
-        Line(40, DATA(List(2.3,4.5,"QWE")))
+        Line(10, READ(List("A",Variable("B",ExprIndex.static(List(10,2))),Variable("C$",ExprIndex.static(List(6)))))),
+        Line(20, DATA(List(2.3,4.5,"QWE")))
       ))
       val initialEnvironment = Environment.empty
       When("program is executed")
@@ -562,10 +559,10 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("store and read data using DATA and READ statements (variable index)") {
       Given("program with read statement before data statements")
       val program = new Program(Vector(
-        Line(10, READ("I")),
-        Line(20, READ(Variable(VariableName("A"),ExprIndex(List(ExprVariable("I")))))),
-        Line(30, READ(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(1))))))),
-        Line(40, READ(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(2))))))),
+        Line(10, READ(
+          List("I",Variable(VariableName("A"),ExprIndex(List(ExprVariable("I")))),
+            Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(1)))))))),
+        Line(20, READ(List(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(2)))))))),
         Line(50, DATA(List(BigDecimal(1),BigDecimal(2.3),BigDecimal(4.5),BigDecimal(6.7))))
       ))
       val initialEnvironment = Environment.empty
@@ -580,9 +577,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
     Scenario("read more data than available") {
       Given("program with read statement before data statements")
       val program = new Program(Vector(
-        Line(10, READ("I")),
-        Line(20, READ("J")),
-        Line(30, READ("K")),
+        Line(10, READ(List("I"))),
+        Line(20, READ(List("J"))),
+        Line(30, READ(List("K"))),
         Line(40, DATA(List(BigDecimal(1),BigDecimal(2))))
       ))
       val initialEnvironment = Environment.empty
@@ -642,6 +639,23 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(1000)))
       assert(environment.console.contains(List(" 1\n"," 2\n"," 3\n"," 4\n"," 5\n")))
+    }
+  }
+  Feature("stop program") {
+    Scenario("stop program") {
+      Given("program with stop statement")
+      val program = new Program(Vector(
+        Line(LineNumber(10), Vector(PRINT(StaticTextExpr("A")))),
+        Line(LineNumber(20), Vector(PRINT(StaticTextExpr("B")),STOP(),PRINT(StaticTextExpr("C")))),
+        Line(LineNumber(30), Vector(PRINT(StaticTextExpr("D")))),
+      ))
+      val initialEnvironment = Environment.empty
+      When("program is executed")
+      val environment = initialEnvironment.run(program)
+      Then("program ends at line with stop statement")
+      assert(environment.getCurrentStatement.contains(StatementId(20,1)))
+      assert(environment.exitCode==ExitCode.PROGRAM_END)
+      assert(environment.console.contains(List("A\n","B\n")))
     }
   }
 }

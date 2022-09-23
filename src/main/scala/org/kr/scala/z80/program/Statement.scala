@@ -188,12 +188,19 @@ case class DATA(values:List[Any]) extends Statement {
   override def list: String = f"DATA ${values.mkString(",")}"
 }
 
-case class READ(variable:Variable) extends Statement {
+case class READ(variables:List[Variable]) extends Statement {
   override def execute(program: Program, environment: Environment): Environment = {
+    variables.foldLeft(environment)((env,variable)=>readOne(variable,env))
+  }
+  private def readOne(variable:Variable,environment: Environment):Environment =
     environment.readData match {
       case Left(code)=>environment.setExitCode(code)
       case Right((env,value))=>env.setValue(variable,value)
     }
-  }
-  override def list: String = f"READ ${variable.list}"
+  override def list: String = f"READ ${variables.map(_.list).mkString(",")}"
+}
+
+case class STOP() extends Statement {
+  override def execute(program: Program, environment: Environment): Environment = environment.setExitCode(ExitCode.PROGRAM_END)
+  override def list: String = f"STOP"
 }

@@ -2,7 +2,7 @@ package org.kr.scala.z80.test
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr, TextExprVariable}
 import org.kr.scala.z80.parser.LineParser
-import org.kr.scala.z80.program.{Assignment, DATA, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Variable, VariableName, VariableStatic}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, STOP, Variable, VariableName, VariableStatic}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprVariable._
@@ -228,12 +228,19 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
   }
   Feature("parse READ line") {
     Scenario("parse READ") {
-      assert(LineParser("10 READ A").contains(Line(10,READ("A"))))
-      assert(LineParser("10 READ B$").contains(Line(10,READ("B$"))))
-      assert(LineParser("10 READ C(1,D)").contains(
-        Line(10,READ(Variable(VariableName("C"),ExprIndex(List(ExprNumber(1),ExprVariable("D"))))))))
-      assert(LineParser("10 READ E$(F,2)").contains(
-        Line(10,READ(Variable(VariableName("E$"),ExprIndex(List(ExprVariable("F"),ExprNumber(2))))))))
+      assert(LineParser("10 READ A,B,C$").contains(Line(10,READ(List("A","B","C$")))))
+      assert(LineParser("10 READ B$").contains(Line(10,READ(List("B$")))))
+      assert(LineParser("10 READ C(1,D),E$(F,2)").contains(
+        Line(10,READ(List(
+          Variable(VariableName("C"),ExprIndex(List(ExprNumber(1),ExprVariable("D")))),
+          Variable(VariableName("E$"),ExprIndex(List(ExprVariable("F"),ExprNumber(2)))))))))
+      assert(LineParser("10 READ G$(H,I)").contains(
+        Line(10,READ(List(Variable(VariableName("G$"),ExprIndex(List(ExprVariable("H"),ExprVariable("I")))))))))
+    }
+  }
+  Feature("parse STOP line") {
+    Scenario("parse STOP") {
+      assert(LineParser("10 STOP").contains(Line(10,STOP())))
     }
   }
   Feature("parse multiple statements in one line") {

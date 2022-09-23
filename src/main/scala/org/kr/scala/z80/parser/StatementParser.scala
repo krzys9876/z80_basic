@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr, TextExprVariable}
-import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Statement, Variable, VariableName}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, STOP, Statement, Variable, VariableName}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -24,9 +24,9 @@ trait CommonParser extends JavaTokenParsers {
 // avoid circular inheritance (IfParser cannot inherit from StatementParser, which must inherit from IfParser)
 trait StatementWithoutIfParser extends CommonParser with RemParser with PrintParser with ForParser with NextParser
   with LetParser with GotoParser with GosubParser with ReturnParser with DimParser with DataParser
-  with ReadParser {
+  with ReadParser with StopParser {
   def statementWithoutIf: Parser[Statement] = rem | print | for_ | next | let | goto | gosub | return_ | dim |
-    data | read
+    data | read | stop
 }
 
 trait RemParser extends CommonParser {
@@ -117,5 +117,10 @@ trait DataParser extends CommonParser {
 }
 
 trait ReadParser extends CommonParser with NumericExpressionParser {
-  def read :Parser[READ] = "READ" ~> (textArray | textVariable | numArray | numVariable) ^^ READ
+  def read :Parser[READ] = "READ" ~> rep1sep(readSingle,",") ^^ READ
+  private def readSingle:Parser[Variable]=textArray | textVariable | numArray | numVariable
+}
+
+trait StopParser extends CommonParser {
+  def stop :Parser[STOP] = "STOP" ^^ {_ => STOP()}
 }
