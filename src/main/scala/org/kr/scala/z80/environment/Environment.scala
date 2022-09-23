@@ -56,7 +56,12 @@ case class Environment(
       case Some(line)=>copy(lineStack=lineStack.push(line)).forceNextLine(nextLine)
     }
   }
-  def popLine(program: Program):Environment= copy(lineStack=lineStack.pop).setNextLineAfterReturn(program)
+  def popLine(program: Program):Environment = {
+    lineStack.pop match {
+      case Left(code)=>setExitCode(code)
+      case Right(newLineStack)=>copy(lineStack=newLineStack).setNextLineAfterReturn(program)
+    }
+  }
   private def setNextLineAfterReturn(program: Program):Environment =
     getCurrentStatement match {
       case None => setExitCode(ExitCode.MISSING_RETURN_LINE)

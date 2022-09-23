@@ -450,6 +450,21 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.exitCode == ExitCode.PROGRAM_END)
       assert(environment.console.contains(List("A\n", "subroutine\n", "B\n", "end\n")))
     }
+    Scenario("run return without gosub") {
+      Given("a program consisting of one gosub and two return lines")
+      val program = new Program(Vector(
+        Line(10, GOSUB(50)),
+        Line(20, RETURN()),
+        Line(30, STOP()),
+        Line(50, RETURN())
+      ))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("return statement ends with error - return without gosub")
+      assert(environment.getCurrentStatement.contains(StatementId(20)))
+      assert(environment.exitCode == ExitCode.RETURN_WITHOUT_GOSUB)
+    }
   }
   Feature("complex PRINT") {
     Scenario("print without tokens") {

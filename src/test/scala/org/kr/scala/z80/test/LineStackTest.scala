@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.environment.LineStack
+import org.kr.scala.z80.environment.{ExitCode, LineStack}
 import org.kr.scala.z80.program.StatementId
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
@@ -30,12 +30,12 @@ class LineStackTest extends AnyFeatureSpec with GivenWhenThen {
       val stack=LineStack.empty.push(StatementId(1)).push(StatementId(2))
       assert(stack.top.contains(StatementId(2)))
       When("a value is popped from stack")
-      val newStack=stack.pop
+      val newStack=stack.pop.toOption.get
       Then("1 is on top of stack")
       assert(newStack.top.contains(StatementId(1)))
       And("after second pop the stack is empty")
       val emptyStack=newStack.pop
-      assert(emptyStack.top.isEmpty)
+      assert(emptyStack.swap.contains(ExitCode.RETURN_WITHOUT_GOSUB))
     }
     Scenario("Pop from empty stack") {
       Given("stack is empty")
@@ -44,7 +44,7 @@ class LineStackTest extends AnyFeatureSpec with GivenWhenThen {
       When("a value is popped from stack")
       val newStack=stack.pop
       Then("stack is still empty")
-      assert(newStack.top.isEmpty)
+      assert(newStack.swap.contains(ExitCode.RETURN_WITHOUT_GOSUB))
     }
     Scenario("Change top value") {
       Given("stack is not empty")
@@ -55,7 +55,7 @@ class LineStackTest extends AnyFeatureSpec with GivenWhenThen {
       Then("top value is changed")
       assert(newStack.top.contains(StatementId(60)))
       And("after popping from stack the previous value is retained")
-      val popStack=newStack.pop
+      val popStack=newStack.pop.toOption.get
       assert(popStack.top.contains(StatementId(20)))
     }
   }
