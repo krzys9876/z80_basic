@@ -9,32 +9,27 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object Main extends App {
   println("START")
-
   val program=args.length match {
-    case 0 =>
+    case 1 => Program.parse(readFile(args(0)))
+    case _ =>
       println("No arguments found, using dummy program.")
-      DummyProgram.program
-    case 1 =>
-      val inputFile=Files.readAllLines(Path.of(args(0))).asScala.toVector
-      new Program(inputFile.map(l=>{
-        println(f"parsing: $l")
-        LineParser.force(l)
-      }))
+      Right(DummyProgram.program)
   }
-
-  //TODO: READ multiple variables separated with comma
-  //TODO: variable index as value of an array
-  //TODO: implement STOP
-
-  program.show()
-  println()
-
-  Environment.empty
-    .run(program)
-    .showCurrentLine()
-    .showExitCode()
-
+  program match {
+    case Left(errorMsg)=>println(errorMsg)
+    case Right(prog)=>runProgram(prog)
+  }
   println("END")
+
+  private def runProgram(program: Program):Unit = {
+    program.show()
+    println()
+    Environment.empty
+      .run(program)
+      .showCurrentLine()
+      .showExitCode()
+  }
+  private def readFile(path:String):List[String] = Files.readAllLines(Path.of(path)).asScala.toList
 }
 
 object DummyProgram {

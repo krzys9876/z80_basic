@@ -1,6 +1,7 @@
 package org.kr.scala.z80.program
 
 import org.kr.scala.z80.environment.ExitCode
+import org.kr.scala.z80.parser.LineParser
 
 class Program(val srcLines: Vector[Line]) {
   val lines:Vector[Line] = srcLines.sortBy(_.number.num)
@@ -52,7 +53,7 @@ class Program(val srcLines: Vector[Line]) {
     lines.find(_.number == statementId.lineNumber) match {
       case Some(line) if statementId.statementNum<line.statementCount =>
         Right((line.statements(statementId.statementNum),line))
-      case None => Left(ExitCode.FATAL_LINE_NOT_FOUND)
+      case _ => Left(ExitCode.FATAL_LINE_NOT_FOUND)
     }
   }
 
@@ -71,6 +72,21 @@ class Program(val srcLines: Vector[Line]) {
           .headOption
         res
       case _ => None
+    }
+  }
+}
+
+object Program {
+  def parse(lines:List[String]):Either[String,Program] = {
+    val parsed:(String,Vector[Line])=lines.foldLeft(("",Vector[Line]()))({case((errors,parsedLines),line)=>
+      LineParser(line) match {
+        case Left(msg) => (errors + f"error parsing: $line\n$msg\n",parsedLines)
+        case Right(line)=>(errors,parsedLines :+ line)
+      }
+    })
+    parsed match {
+      case("",parsedLines)=>Right(new Program(parsedLines))
+      case(msg,_)=>Left(msg)
     }
   }
 }
