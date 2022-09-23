@@ -91,7 +91,6 @@ object NEXT {
 case class PRINT(tokens: Vector[PrintableToken]) extends Statement {
   // print text to console
   override def execute(program: Program, environment: Environment): Environment =
-    //TODO: decode missing value properly (return exit code if variable cannot be decoded)
     environment.consolePrint(tokens.map(_.printableText(environment)).mkString("")+endOfLineOrNone)
   private def lastToken:Option[PrintableToken] = Try(tokens.last).toOption
   private def shouldSkipEol:Boolean=lastToken.exists(_.isEmptySeparator)
@@ -108,7 +107,6 @@ case class PrintableToken(prefixSeparator:Option[String],expression: Expression)
   def printableText(environment: Environment):String = prefixToText+expression.valueText(environment)
   private def prefixToText:String=
     prefixSeparator match {
-      //TODO: handle proper tabulation - add tab sign and handle it via console object (to be implemented)
       case Some(",")=>"\t"
       case _ => ""
     }

@@ -4,7 +4,7 @@ import org.kr.scala.z80.program.{Line, LineNumber}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
-//TODO: change all string matchers to be case insensitive AND convert all variable names to upper case
+//NOTE: all string matchers are case insensitive AND all variables and keywords should be upper case
 abstract class BaseParser[T]() extends JavaTokenParsers {
   def result:Parser[T]
 

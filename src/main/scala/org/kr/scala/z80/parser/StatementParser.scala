@@ -1,7 +1,7 @@
 package org.kr.scala.z80.parser
 
 import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr, TextExprVariable}
-import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, STOP, Statement, Variable, VariableName}
+import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, STOP, Statement, Variable}
 
 import scala.util.parsing.combinator.JavaTokenParsers
 
@@ -75,7 +75,6 @@ trait AssignmentParser extends VariableParser with NumericExpressionParser {
   def numericArrayAssignment:Parser[NumericAssignment] = numArray ~ ("=" ~> numericExpression) ^^ {
     case v ~ e => NumericAssignment(v,e)
   }
-  //TODO: extend text assignment with text expressions (after it is implemented)
   def textAssignment:Parser[Assignment] =
     (textArray | textVariable) ~ ("=" ~> anyTextQuoted) ^^ {case v ~ e => Assignment(v,StaticTextExpr(e))} |
       (textArray | textVariable) ~ ("=" ~> (textArray | textVariable)) ^^ {case v ~ e => Assignment(v,ExprVariable(e))}
