@@ -44,6 +44,7 @@ case class StatementId(lineNumber: LineNumber, statementNum: Int) {
     (lineNumber.num==other.lineNumber.num && statementNum<other.statementNum)
   }
   def nextSameLine:StatementId=copy(statementNum=statementNum+1)
+  override def toString: String = f"${lineNumber.num}${if(statementNum>0) f"($statementNum)" else ""}"
 }
 
 object StatementId {
