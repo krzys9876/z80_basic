@@ -13,7 +13,7 @@ abstract class NumericExpression extends Expression {
   override def valueText(env: Environment):String=
     valueNum(env) match {
       case None => ""
-      case Some(number) => if(number.isWhole) intFormat.format(number) else number.toString
+      case Some(number) => f" ${if(number.isWhole) intFormat.format(number) else number.toString}"
     }
 }
 
@@ -110,6 +110,7 @@ case class ExprFunction(factor:NumericExpression, function:String) extends Numer
           case "COS" => Right(scala.math.cos(v.toDouble))
           case "NOT" => bitwiseOper(v.toDouble, ~_)
           case "INT" => Right(scala.math.floor(v.toDouble))
+          case "RND" => Right(scala.math.random())
           case "SQR" => Try(Right(BigDecimal(scala.math.sqrt(v.toDouble)))).getOrElse(Left("squaring error"))
           case "-" => Right(-v)
           case fun => Left(f"function: $fun is not supported")

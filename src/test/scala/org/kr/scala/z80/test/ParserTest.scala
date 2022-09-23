@@ -1,6 +1,6 @@
 package org.kr.scala.z80.test
 
-import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr, TextExprVariable}
 import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.{Assignment, DATA, DIM, ExprIndex, FOR, GOSUB, GOTO, IF, Index, LET, Line, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Variable, VariableName, VariableStatic}
 import org.scalatest.GivenWhenThen
@@ -61,6 +61,10 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
           PrintableToken(ExprNumber(2)),
           PrintableToken(Some(","),ExprNumber(3)),
           PrintableToken(Some(","),BlankTextExpr))))))
+    }
+    Scenario("print text array") {
+      assert(LineParser("20 PRINT A$(B(C))").contains(
+        Line(20,PRINT(TextExprVariable(Variable("A$",ExprIndex(List(ExprVariable(Variable("B",ExprIndex(List(ExprVariable("C")))))))))))))
     }
   }
 
@@ -133,6 +137,26 @@ class ParserTest extends AnyFeatureSpec with GivenWhenThen {
           Variable("A$",ExprIndex(
             List(ExprOperation.plus(ExprVariable("B"),ExprVariable("C"))))),
           ExprVariable(Variable("D$",ExprIndex(List(ExprVariable("E"),ExprVariable("F"))))))))))
+    }
+    Scenario("parse numeric array in nested indexes") {
+      assert(LineParser("20 LET A(B(C(D)))=E(F(G))").contains(Line(20,
+        LET(NumericAssignment(Variable("A",ExprIndex(
+            List(ExprVariable(Variable("B",ExprIndex(
+              List(ExprVariable(Variable("C",ExprIndex(
+                List(ExprVariable(Variable("D"))))))))))))),
+          ExprVariable(Variable("E",ExprIndex(
+            List(ExprVariable(Variable("F",ExprIndex(
+              List(ExprVariable("G"))))))))))))))
+    }
+    Scenario("parse text array in nested indexes") {
+      assert(LineParser("20 LET A$(B(C(D)))=E$(F(G))").contains(Line(20,
+        LET(Assignment(Variable("A$",ExprIndex(
+          List(ExprVariable(Variable("B",ExprIndex(
+            List(ExprVariable(Variable("C",ExprIndex(
+              List(ExprVariable(Variable("D"))))))))))))),
+          ExprVariable(Variable("E$",ExprIndex(
+            List(ExprVariable(Variable("F",ExprIndex(
+              List(ExprVariable("G"))))))))))))))
     }
   }
 

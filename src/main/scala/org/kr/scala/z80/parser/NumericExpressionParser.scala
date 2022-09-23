@@ -25,7 +25,7 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
 
   // FactorX / OperationX - numbers indicate order of precedence of operations
   // Precedence is defined in MS Basic documentation (page 5.4)
-  private def factor1:PN = num | func | variableExpr | exprParen
+  private def factor1:PN = num | func | numVariableExpr | exprParen
   // Partial operation - decode only operator and the second factor, leave first factor unresolved
   private def operation1:PNN = power ~ factor1 ^^ { case op ~ f2 => ExprOperation(_, f2, op) }
   private def factor2:PN = neg | factor1 ~ rep(operation1) ^^ {case f ~ op => applyOperations(f, op) }
@@ -48,9 +48,9 @@ trait NumericExpressionParser extends CommonParser with VariableParser {
   //Private building blocks for hierarchy of operations
   private def num:PN=floatingPointNumber ^^ (d => ExprNumber(d.toDouble))
   def exprIndex:Parser[ExprIndex]="(" ~> rep1sep(numericExpression,",") <~ ")" ^^ { l => ExprIndex(l)}
-  private def variableExpr:PN=(numArray | numVariable) ^^ (v => ExprVariable(v))
+  private def numVariableExpr:PN=(numArray | numVariable) ^^ (v => ExprVariable(v))
   private def exprParen: PN = "(" ~> numericExpression <~ ")"
-  private def func: PN = ("ABS" | "SIN" | "COS" | "INT" | "SQR") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
+  private def func: PN = ("ABS" | "SIN" | "COS" | "INT" | "SQR" | "RND") ~ exprParen ^^ { case name ~ f => ExprFunction(f, name) }
   private def neg: PN = "-" ~> factor1 ^^ {ExprFunction(_,"-")}
   private def power:Parser[String] = "^"
   private def multiplication:Parser[String] = "*" | "/"

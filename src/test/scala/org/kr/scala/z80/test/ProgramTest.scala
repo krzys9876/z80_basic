@@ -1,12 +1,13 @@
 package org.kr.scala.z80.test
 
 import org.kr.scala.z80.environment.{Environment, ExitCode, ForState}
-import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprNumber, ExprOperation, ExprVariable, StaticTextExpr, TextExprVariable}
 import org.kr.scala.z80.program.{Assignment, DATA, ExprIndex, FOR, GOSUB, GOTO, IF, LET, Line, LineNumber, NEXT, NumericAssignment, PRINT, PrintableToken, Program, READ, REM, RETURN, StatementId, Variable, VariableName}
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.kr.scala.z80.expression.ExprNumber._
 import org.kr.scala.z80.expression.ExprVariable._
+
 import scala.annotation.tailrec
 
 class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
@@ -97,6 +98,29 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.getValue(Variable("AR",ExprIndex.static(List(4,2)))).contains(99.88))
       assert(environment.getValue("V").contains(99.88))
       assert(environment.getValue("W").contains(99.88))
+    }
+    Scenario("Assign a value of and array with index being array too") {
+      Given("a program consisting of assignment lines with arrays")
+      And("index being an array")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment(Variable("V",ExprIndex.static(List(1,2))),8))),
+        Line(20, LET(Assignment(Variable("AR",ExprIndex(List(ExprVariable(Variable("V",ExprIndex.static(List(1,2))))))),98.99)))))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("environment contains arrays with expected values")
+      assert(environment.getValue(Variable("AR",ExprIndex.static(List(8)))).contains(98.99))
+    }
+    Scenario("Print a value of a text array") {
+      Given("a program consisting of assignment and print lines with test arrays")
+      val program = new Program(Vector(
+        Line(10, LET(Assignment(Variable("A$",ExprIndex.static(List(1))),StaticTextExpr("ABC")))),
+        Line(20, PRINT(TextExprVariable(Variable("A$",ExprIndex.static(List(1))))))))
+      When("program is executed")
+      val initialEnvironment = Environment.empty
+      val environment = initialEnvironment.run(program)
+      Then("console contains value of an test array")
+      assert(environment.console.contains(List("ABC\n")))
     }
   }
   Feature("FOR loop") {
@@ -334,7 +358,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       And("conditional statement is executed")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
-      assert(environment.console.contains(List("10\n", "X\n")))
+      assert(environment.console.contains(List(" 10\n", "X\n")))
     }
     Scenario("run if line with statement (fail)") {
       Given("a program consisting of if line with failing condition and statement after condition")
@@ -588,7 +612,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment = initialEnvironment.run(program)
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20,1)))
-      assert(environment.console.contains(List("100\n","110\n")))
+      assert(environment.console.contains(List(" 100\n"," 110\n")))
       assert(environment.getValue("A").contains(100))
       assert(environment.getValue("B").contains(110))
     }
@@ -602,7 +626,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment = initialEnvironment.run(program)
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20,2)))
-      assert(environment.console.contains(List("START\n","1\n","2\n","END\n")))
+      assert(environment.console.contains(List("START\n"," 1\n"," 2\n","END\n")))
     }
     Scenario("multiple statements in one line with gosub") {
       Given("program with multiple statements in one line and gosub jumps")
@@ -617,7 +641,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val environment = initialEnvironment.run(program)
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(1000)))
-      assert(environment.console.contains(List("1\n","2\n","3\n","4\n","5\n")))
+      assert(environment.console.contains(List(" 1\n"," 2\n"," 3\n"," 4\n"," 5\n")))
     }
   }
 }

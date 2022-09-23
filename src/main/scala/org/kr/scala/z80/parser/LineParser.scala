@@ -9,11 +9,18 @@ abstract class BaseParser[T]() extends JavaTokenParsers {
   def result:Parser[T]
 
   def process(input: String): Either[String, T] = {
-    parseAll(result, input) match {
+    parseAll(result, BaseParser.escapeBackslash(input)) match {
       case Success(result, _) => Right(result)
       case failure: NoSuccess => Left(failure.msg)
     }
   }
+}
+
+object BaseParser {
+  val backslash="\\"
+  val backslashEscaed="~~"
+  def escapeBackslash(text:String):String=text.replace(backslash,backslashEscaed)
+  def unEscapeBackslash(text:String):String=text.replace(backslashEscaed,backslash)
 }
 
 case class LineParser() extends BaseParser[Line] with CommonParser with LineNumberParser with StatementParser {

@@ -1,6 +1,6 @@
 package org.kr.scala.z80.parser
 
-import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr}
+import org.kr.scala.z80.expression.{BlankTextExpr, ExprVariable, Expression, StaticTextExpr, TextExprVariable}
 import org.kr.scala.z80.program.{Assignment, DATA, DIM, FOR, GOSUB, GOTO, IF, Index, LET, NEXT, NumericAssignment, PRINT, PrintableToken, READ, REM, RETURN, Statement, Variable, VariableName}
 
 import scala.util.parsing.combinator.JavaTokenParsers
@@ -13,7 +13,7 @@ trait CommonParser extends JavaTokenParsers {
   def integerNumber: Parser[String] = """(\d+)""".r
   def anyText: Parser[String] = """(.*)""".r
   def anyTextWoComma: Parser[String] = """([^, ]*)""".r
-  def anyTextQuoted:Parser[String] = stringLiteral ^^ stripQuotes
+  def anyTextQuoted:Parser[String] = stringLiteral ^^ {t => BaseParser.unEscapeBackslash(stripQuotes(t))}
   def emptyString:Parser[String] = """(^$)""".r
 
   private def stripFirstAndLastChar(t:String):String = t.substring(1,t.length-1)
@@ -37,7 +37,8 @@ trait PrintParser extends CommonParser with NumericExpressionParser {
   def print:Parser[PRINT] = "PRINT" ~> opt(tokens) ^^ {t => PRINT(t.getOrElse(List()).toVector)}
 
   private def staticTextExpr:Parser[StaticTextExpr] = anyTextQuoted ^^ StaticTextExpr
-  private def token:Parser[Expression]=numericExpression | staticTextExpr
+  private def variableTextExpr:Parser[TextExprVariable] = textArray ^^ {TextExprVariable(_)}
+  private def token:Parser[Expression]= variableTextExpr | numericExpression | staticTextExpr
   private def tokenSeparator:Parser[String]=";" | ","
   private def tokenSep:Parser[PrintableToken]=tokenSeparator ~ token ^^ {case s ~ t => PrintableToken(Some(s),t)}
   private def tokens:Parser[List[PrintableToken]]=
