@@ -41,3 +41,15 @@ circular dependencies).
 
 This is enough to run tic-tac-toe (10x10) game, which was a test program for Z80 simulator. 
 
+## Program execution ##
+
+I was wondering how to enable parameterized program execution, i.e. how to easily choose between 
+executing e.g. first X steps or finishing after Y seconds etc. 
+
+I came up with the idea of Iterator and Iterable classes (I know, the names are so general that they may be 
+easily confused...). Iterator simply runs a step method of a Iterable object and checks if the execution is over
+by invoking an external function. Is it an overkill for this purpose? Well, it may be but this is 
+also a brain-teaser, which a fun projects are all about :smile:
+
+This also enables different execution of test (i.e. always run a test program to an end and check the results)
+vs runtime.
