@@ -1,11 +1,10 @@
 package org.kr.scala.z80
 
-import org.kr.scala.z80.environment.Environment
+import org.kr.scala.z80.environment.{Environment,Iterator}
 import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.Program
 
 import java.nio.file.{Files, Path}
-import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object Main extends App {
@@ -63,12 +62,6 @@ object DummyProgram {
     LineParser.force("500 DATA 11,12,13,14,15"),
     LineParser.force("1000 PRINT \"the program ends here\""),
   ))
-}
-
-case class Iterator[O](next:O=>O,ends:O=>Boolean) {
-  @tailrec
-  final def iterate(o:O):O=
-    if (ends(o)) o else iterate(next(o))
 }
 
 case class Runner(program: Program) {
