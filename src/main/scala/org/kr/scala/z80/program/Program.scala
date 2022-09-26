@@ -89,4 +89,5 @@ object Program {
       case(msg,_)=>Left(msg)
     }
   }
+  def empty:Program=new Program(Vector())
 }

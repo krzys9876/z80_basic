@@ -20,8 +20,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(25, REM("comment3")),
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment state is unchanged except for last line number")
       assert(environment.getCurrentStatement.contains(StatementId(25)))
     }
@@ -32,8 +32,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("bbbb")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
       assert(environment.console.contains(List("aaaa\n", "bbbb\n")))
@@ -49,8 +49,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(45, LET(Assignment("D", ExprNumber(false))))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment contains variables with expected values")
       assert(environment.getCurrentStatement.contains(StatementId(45)))
       assert(environment.getValue("A").contains(123.0))
@@ -73,8 +73,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(38, LET(Assignment(Variable("C$",ExprIndex.static(List(1,2,3,4))), StaticTextExpr("abc")))), // the same index!
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment contains arrays with expected values")
       assert(environment.getValue(Variable("A",ExprIndex.static(List(1,2)))).contains(101))
       assert(environment.getValue(Variable("A",ExprIndex.static(List(1,3)))).contains(200))
@@ -106,8 +106,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, LET(Assignment(Variable("V",ExprIndex.static(List(1,2))),8))),
         Line(20, LET(Assignment(Variable("AR",ExprIndex(List(ExprVariable(Variable("V",ExprIndex.static(List(1,2))))))),98.99)))))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment contains arrays with expected values")
       assert(environment.getValue(Variable("AR",ExprIndex.static(List(8)))).contains(98.99))
     }
@@ -130,8 +130,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, FOR(NumericAssignment("I", 1), 3))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment contains looping variable with initial value")
       assert(environment.getCurrentStatement.contains(StatementId(10)))
       assert(environment.getValue("I").contains(1))
@@ -159,8 +159,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(40, PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed properly and looping variable is set to end value")
       assert(environment.getCurrentStatement.contains(StatementId(40)))
       assert(environment.getValue("I").contains(3))
@@ -175,8 +175,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed properly and looping variable is set to end value")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
       assert(environment.getValue("I").contains(7))
@@ -211,8 +211,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(70, PRINT(StaticTextExpr("Z")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loops are executed properly")
       assert(environment.getCurrentStatement.contains(StatementId(70)))
       assert(environment.getValue("I").contains(3))
@@ -235,8 +235,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(35, PRINT(StaticTextExpr("E")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("both loops are executed properly")
       And("'next' and 'for' statements are correctly identified")
       assert(environment.getCurrentStatement.contains(StatementId(35)))
@@ -266,8 +266,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed only once")
       And("missing next is ignored")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
@@ -281,8 +281,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("the loop is not executed")
       And("program ends with error - missing next statement")
       assert(environment.getCurrentStatement.contains(StatementId(10)))
@@ -298,8 +298,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, NEXT("J"))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("the loop is executed once")
       And("program ends with error - missing for statement")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -318,8 +318,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(40, PRINT(StaticTextExpr("C"))),
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("jump is executed")
       assert(environment.getCurrentStatement.contains(StatementId(40)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
@@ -334,8 +334,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(40, PRINT(StaticTextExpr("C"))),
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("jump is not executed")
       And("program ends with error - line not found")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
@@ -352,8 +352,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("condition is checked")
       And("conditional statement is executed")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -368,8 +368,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("condition is evaluated to false")
       And("conditional statement is not executed")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -385,8 +385,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("condition is checked")
       And("conditional statement is executed")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -402,8 +402,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, PRINT(StaticTextExpr("X")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("condition is checked")
       And("conditional statement is executed")
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -421,8 +421,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(40, PRINT(StaticTextExpr("C"))),
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("jump is executed")
       assert(environment.getCurrentStatement.contains(StatementId(40)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
@@ -443,8 +443,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(70, PRINT(StaticTextExpr("end"))),
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("jump is executed")
       assert(environment.getCurrentStatement.contains(StatementId(70)))
       assert(environment.exitCode == ExitCode.PROGRAM_END)
@@ -459,8 +459,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(50, RETURN())
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("return statement ends with error - return without gosub")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
       assert(environment.exitCode == ExitCode.RETURN_WITHOUT_GOSUB)
@@ -473,8 +473,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, PRINT(BlankTextExpr))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("blank line is printed")
       assert(environment.console.contains(List("\n")))
     }
@@ -484,8 +484,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("single token is printed")
       assert(environment.console.contains(List("A\n")))
     }
@@ -499,8 +499,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
           PrintableToken(Some(";"),StaticTextExpr("C"))))
       )))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("all tokens are printed with adequate separators (none or tab)")
       And("with EOL")
       assert(environment.console.contains(List("A\tBC\n")))
@@ -519,8 +519,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
           PrintableToken(Some(","),BlankTextExpr)))
         )))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("all tokens are printed with adequate separators (none or tab)")
       And("without EOL")
       assert(environment.console.contains(List("A\tB","CD\t")))
@@ -534,8 +534,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, DATA(List("ABC",5.2)))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("data is stored")
       val data=readData(environment)
       assert(data == List(1, 2, "ABC", 5.2))
@@ -547,9 +547,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, READ(List(Variable("C$",ExprIndex.static(List(2,3))))))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
+      val initialEnvironment = Environment.load(program)
         .storeData(List(1.2,3.4,"abc"))
-      val environment = initialEnvironment.run(program)
+      val environment = initialEnvironment.run
       Then("data is read to variables")
       assert(environment.exitCode==ExitCode.PROGRAM_END)
       assert(environment.getValue("A").contains(1.2))
@@ -562,9 +562,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, READ(List("A",Variable("B",ExprIndex.static(List(10,2))),Variable("C$",ExprIndex.static(List(6)))))),
         Line(20, DATA(List(2.3,4.5,"QWE")))
       ))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("data is read to variables")
       assert(environment.exitCode==ExitCode.PROGRAM_END)
       assert(environment.getValue("A").contains(2.3))
@@ -580,9 +580,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, READ(List(Variable(VariableName("A"),ExprIndex(List(ExprOperation.plus(ExprVariable("I"),ExprNumber(2)))))))),
         Line(50, DATA(List(BigDecimal(1),BigDecimal(2.3),BigDecimal(4.5),BigDecimal(6.7))))
       ))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("data is read to variables")
       assert(environment.exitCode==ExitCode.PROGRAM_END)
       assert(environment.getValue(Variable("A",ExprIndex.static(List(1)))).contains(2.3))
@@ -597,9 +597,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(30, READ(List("K"))),
         Line(40, DATA(List(BigDecimal(1),BigDecimal(2))))
       ))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("error occurs - out of data")
       assert(environment.exitCode==ExitCode.OUT_OF_DATA)
       assert(environment.getCurrentStatement.contains(StatementId(30)))
@@ -619,9 +619,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val program = new Program(Vector(
         Line(LineNumber(10), Vector(LET(Assignment("A", 100)),PRINT(ExprVariable("A")))),
         Line(LineNumber(20), Vector(LET(Assignment("B", 110)),PRINT(ExprVariable("B"))))))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20,1)))
       assert(environment.console.contains(List(" 100\n"," 110\n")))
@@ -633,9 +633,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       val program = new Program(Vector(
         Line(LineNumber(10), Vector(PRINT(StaticTextExpr("START")),FOR(NumericAssignment("I",ExprNumber(1)),ExprNumber(2)))),
         Line(LineNumber(20), Vector(PRINT("I"),NEXT("I"),PRINT(StaticTextExpr("END"))))))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(20,2)))
       assert(environment.console.contains(List("START\n"," 1\n"," 2\n","END\n")))
@@ -648,9 +648,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(LineNumber(200), Vector(PRINT(3),RETURN())),
         Line(LineNumber(300), Vector(PRINT(4),RETURN())),
         Line(LineNumber(1000), Vector(PRINT(5)))))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("console contains printed output")
       assert(environment.getCurrentStatement.contains(StatementId(1000)))
       assert(environment.console.contains(List(" 1\n"," 2\n"," 3\n"," 4\n"," 5\n")))
@@ -664,9 +664,9 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(LineNumber(20), Vector(PRINT(StaticTextExpr("B")),STOP(),PRINT(StaticTextExpr("C")))),
         Line(LineNumber(30), Vector(PRINT(StaticTextExpr("D")))),
       ))
-      val initialEnvironment = Environment.empty
       When("program is executed")
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("program ends at line with stop statement")
       assert(environment.getCurrentStatement.contains(StatementId(20,1)))
       assert(environment.exitCode==ExitCode.PROGRAM_END)

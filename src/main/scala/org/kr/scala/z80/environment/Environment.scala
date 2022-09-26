@@ -6,13 +6,16 @@ import scala.annotation.tailrec
 import scala.math.BigDecimal
 
 case class Environment(
-                        private val variables:Variables,
-                        private val data:Data,
-                        private val forStack:ForStack,
-                        private val lineStack:LineStack,
-                        console:EnvConsole,
+                        program: Program=Program.empty,
+                        private val variables:Variables=Variables.empty,
+                        private val data:Data=Data.empty,
+                        private val forStack:ForStack=ForStack.empty,
+                        private val lineStack:LineStack=LineStack.empty,
+                        console:EnvConsole=EnvConsole.empty,
                         exitCode:ExitCode=ExitCode.NORMAL,
+                        nextAction:Either[ExitCode,StatementId]=Right(StatementId(0)),
                         nextStatement:Option[StatementId]=None) {
+
   def setValue(variable: Variable, value:Any):Environment=
     processVariables(variables.store(variable,value,this))
   private def processVariables(setValueResult:Either[ExitCode,Variables]):Environment =
@@ -30,6 +33,7 @@ case class Environment(
       case Right(index)=>copy(variables=variables.setArrayDim(VariableStatic(variable.name,index)))
     }
   }
+  def setNextAction(newAction:Either[ExitCode,StatementId]):Environment=copy(nextAction=newAction)
 
   def readData:Either[ExitCode,(Environment,Any)] =
     data.read match {
@@ -102,43 +106,60 @@ case class Environment(
     }
 
   def getCurrentStatement:Option[StatementId]=lineStack.top
-  def initBeforeProgram:Environment=setExitCode(ExitCode.NORMAL)
+  def initBefore(program:Program):Environment=
+    setExitCode(ExitCode.NORMAL)
+      .setNextAction(program.firstStatement)
   def setExitCode(code:ExitCode):Environment = copy(exitCode=code)
 
   def run(program:Program):Environment= {
-    initBeforeProgram
-      .runProgram(program,Statement.preprocess)
-      .initBeforeProgram
+    runProgram(program,Statement.preprocess)
       .runProgram(program,Statement.execute)
   }
 
+  def preprocess:Environment=
+    runProgram(program,Statement.preprocess)
+      .initBefore(program)
+
+  def run:Environment= runProgram(program,Statement.execute)
+
   private def runProgram(program: Program,
-                         runFunction:Statement.processLineType) = runLine(program.firstStatement,program,runFunction)
-  @tailrec
-  private final def runLine(action:Either[ExitCode,StatementId], program: Program,
-                            runFunction:Statement.processLineType):Environment= {
-    action match {
-      case Left(code) =>setExitCode(code) // end of program
+                         runFunction:Statement.processLineType) = {
+    initBefore(program)
+      .nextLine(program,runFunction)
+  }
+
+  def step:Environment=
+    nextAction match {
+      case Left(code) => setExitCode(code) // end of program
       case Right(statementId) =>
-        val (afterEnv,nextAction)=
-          resetNextLine
-            .runOneLine(statementId,program,runFunction)
-        afterEnv.runLine(nextAction,program,runFunction)
+        resetNextLine
+          .runOneLine(statementId, program, Statement.execute)
+    }
+
+  @tailrec
+  private final def nextLine(program: Program,
+                            runFunction:Statement.processLineType):Environment= {
+    nextAction match {
+      case Left(code) => setExitCode(code) // end of program
+      case Right(statementId) =>
+        resetNextLine
+          .runOneLine(statementId,program,runFunction)
+          .nextLine(program,runFunction)
     }
   }
 
   private def resetNextLine:Environment=copy(nextStatement=None)
   private def runOneLine(statementId:StatementId, program: Program,
-                         runFunction:Statement.processLineType):(Environment,Either[ExitCode,StatementId]) = {
+                         runFunction:Statement.processLineType):Environment = {
     program.lineByNum(statementId) match {
-      case Left(code)=>(this,Left(code))
+      case Left(code)=>setNextAction(Left(code))
       case Right(lineToExecute)=>
         lineToExecute.execute(program,setLine(statementId),statementId,runFunction) match {
-          case env if env.exitCode!=ExitCode.NORMAL => (env,Left(env.exitCode))
+          case env if env.exitCode!=ExitCode.NORMAL => env.setNextAction(Left(env.exitCode))
           case env =>
             // determine next line - either next line in program (or end of program code) or other number saved by the executed line
             val nextAction=env.nextStatement.map(num=>Right(num)).getOrElse(program.statementAfter(statementId))
-            (env,nextAction)
+            env.setNextAction(nextAction)
         }
     }
   }
@@ -162,7 +183,9 @@ case class Environment(
 }
 
 object Environment {
-  def empty:Environment=new Environment(Variables.empty,Data.empty,ForStack.empty,LineStack.empty,EnvConsole.empty)
+  def load(program:Program):Environment= new Environment(program).preprocess
+  def empty:Environment=new Environment()
+  def finished(e:Environment):Boolean=e.exitCode!=ExitCode.NORMAL
 }
 
 case class EnvConsole(lines:Vector[String]) {

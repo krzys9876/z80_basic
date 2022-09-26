@@ -5,6 +5,7 @@ import org.kr.scala.z80.parser.LineParser
 import org.kr.scala.z80.program.Program
 
 import java.nio.file.{Files, Path}
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object Main extends App {
@@ -22,10 +23,9 @@ object Main extends App {
   println("END")
 
   private def runProgram(program: Program):Unit = {
-    program.show()
-    println()
-    Environment.empty
-      .run(program)
+    Runner(program)
+      .list
+      .run
       .showCurrentLine()
       .showExitCode()
   }
@@ -63,4 +63,18 @@ object DummyProgram {
     LineParser.force("500 DATA 11,12,13,14,15"),
     LineParser.force("1000 PRINT \"the program ends here\""),
   ))
+}
+
+case class Iterator[O](next:O=>O,ends:O=>Boolean) {
+  @tailrec
+  final def iterate(o:O):O=
+    if (ends(o)) o else iterate(next(o))
+}
+
+case class Runner(program: Program) {
+  def list:Runner = {
+    program.show()
+    this
+  }
+  def run:Environment = Iterator[Environment](_.step,Environment.finished).iterate(Environment.load(program))
 }
