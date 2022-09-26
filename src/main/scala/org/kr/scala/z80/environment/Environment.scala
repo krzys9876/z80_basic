@@ -2,6 +2,9 @@ package org.kr.scala.z80.environment
 
 import org.kr.scala.z80.program.{Program, Statement, StatementId, Variable, VariableStatic}
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import scala.annotation.tailrec
 import scala.math.BigDecimal
 
@@ -14,7 +17,9 @@ case class Environment(
                         console:EnvConsole=EnvConsole.empty,
                         exitCode:ExitCode=ExitCode.NORMAL,
                         nextAction:Either[ExitCode,StatementId]=Right(StatementId(0)),
-                        nextStatement:Option[StatementId]=None) {
+                        nextStatement:Option[StatementId]=None,
+                        stepCounter:Long = 0,
+                        startTime:Option[LocalDateTime] = None) extends Iterable[Environment] {
 
   def setValue(variable: Variable, value:Any):Environment=
     processVariables(variables.store(variable,value,this))
@@ -105,10 +110,13 @@ case class Environment(
         }
     }
 
+  private def startTimer:Environment = copy(startTime = Some(LocalDateTime.now()))
+
   def getCurrentStatement:Option[StatementId]=lineStack.top
   def reset:Environment=
     setExitCode(ExitCode.NORMAL)
       .setNextAction(program.firstStatement)
+      .startTimer
   def setExitCode(code:ExitCode):Environment = copy(exitCode=code)
 
   def preprocess:Environment=
@@ -122,12 +130,15 @@ case class Environment(
       .nextLine(runFunction)
   }
 
-  def step:Environment=
+  private def incCounter:Environment = copy(stepCounter=stepCounter+1)
+
+  override def step:Environment=
     nextAction match {
       case Left(code) => setExitCode(code) // end of program
       case Right(statementId) =>
         resetNextLine
           .runOneLine(statementId, Statement.execute)
+          .incCounter
     }
 
   @tailrec
@@ -172,12 +183,29 @@ case class Environment(
     println(f"Current line: ${lineStack.top.getOrElse(-1)}")
     this
   }
+
+  def showSteps():Environment = {
+    println(f"Steps executed: $stepCounter")
+    this
+  }
+
+  def showTime():Environment = {
+    val formatter=DateTimeFormatter.ofPattern("hh:mm:ss.SSS")
+    println(f"Started: ${startTime.map(_.format(formatter)).getOrElse("???")}")
+    println(f"Ended:   ${LocalDateTime.now().format(formatter)}")
+    this
+  }
 }
 
 object Environment {
   def load(program:Program):Environment= new Environment(program).preprocess
   def empty:Environment=new Environment()
-  def finished(e:Environment):Boolean=e.exitCode!=ExitCode.NORMAL
+  def finishByCode(e:Environment):Boolean=e.exitCode!=ExitCode.NORMAL
+  def finishAfterSteps(e:Environment, maxSteps:Long):Boolean=finishByCode(e) || e.stepCounter >= maxSteps
+  def finishAfterSeconds(e:Environment, seconds:Double):Boolean={
+    def elapsedSeconds(start:LocalDateTime):Double = ChronoUnit.MILLIS.between(start,LocalDateTime.now()).toDouble/1000
+    finishByCode(e) || e.startTime.exists(elapsedSeconds(_) > seconds)
+  }
 }
 
 case class EnvConsole(lines:Vector[String]) {

@@ -653,5 +653,5 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
 }
 
 case class TestRunner(program: Program) {
-  def run:Environment = Iterator[Environment](_.step,Environment.finished).iterate(Environment.load(program))
+  def run:Environment = Iterator[Environment](Environment.finishByCode).iterate(Environment.load(program))
 }
