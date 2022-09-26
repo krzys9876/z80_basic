@@ -49,7 +49,7 @@ executing e.g. first X steps or finishing after Y seconds etc.
 I came up with the idea of Iterator and Iterable classes (I know, the names are so general that they may be 
 easily confused...). Iterator simply runs a step method of a Iterable object and checks if the execution is over
 by invoking an external function. Is it an overkill for this purpose? Well, it may be but this is 
-also a brain-teaser, which a fun projects are all about :smile:
+also a brain-teaser, and that's what fun projects are all about :smile:
 
 This also enables different execution of test (i.e. always run a test program to an end and check the results)
 vs runtime.
