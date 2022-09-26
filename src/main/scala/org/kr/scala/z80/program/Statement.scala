@@ -6,7 +6,6 @@ import org.kr.scala.z80.expression.{BlankTextExpr, Expression, NumericExpression
 import scala.math.BigDecimal
 import scala.util.Try
 
-//TODO: make environent implicit
 trait Statement extends Listable {
   override def list: String
   //Normal execution
