@@ -6,25 +6,26 @@ import org.kr.scala.z80.expression.{BlankTextExpr, Expression, NumericExpression
 import scala.math.BigDecimal
 import scala.util.Try
 
+//TODO: make environent implicit
 trait Statement extends Listable {
   override def list: String
   //Normal execution
-  def execute(program: Program, environment: Environment): Environment=environment
+  def execute(environment: Environment): Environment=environment
   //Pre-process (e.g. data statements)
-  def preprocess(program: Program, environment: Environment): Environment=environment
+  def preprocess(environment: Environment): Environment=environment
 }
 
 object Statement {
-  type processLineType=(Statement, Program, Environment) => Environment
+  type processLineType=(Statement, Environment) => Environment
 
-  def execute(statement:Statement, program: Program, environment: Environment): Environment=
-    statement.execute(program,environment)
-  def preprocess(statement:Statement, program: Program, environment: Environment): Environment=
-    statement.preprocess(program,environment)
+  def execute(statement:Statement, environment: Environment): Environment=
+    statement.execute(environment)
+  def preprocess(statement:Statement, environment: Environment): Environment=
+    statement.preprocess(environment)
 }
 
 case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:Option[NumericExpression]) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
+  override def execute(environment: Environment): Environment = {
     environment.getFor(assignment.variable) match {
       case None =>
         val startVal=assignment.expression.valueNum(environment)
@@ -32,12 +33,12 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
         val stepVal=step.flatMap(_.valueNum(environment)).getOrElse(BigDecimal(1))
         (startVal,endVal) match {
           case (None,_) | (_,None) => environment.setExitCode(ExitCode.FATAL_FOR_MISSING_VALUE)
-          case (Some(startV),Some(endV)) if startV>endV=>finishFor(program,environment)
+          case (Some(startV),Some(endV)) if startV>endV=>finishFor(environment)
           case (Some(startV),Some(endV))=>initFor(environment,startV,endV,stepVal)
         }
       case Some(state) =>
         calculateNextValue(environment,state.step) match {
-          case Some(nextValue) if nextValue > state.end => finishFor(program, environment)
+          case Some(nextValue) if nextValue > state.end => finishFor(environment)
           case Some(nextValue) => continueFor(environment,nextValue)
           case None=>environment.setExitCode(ExitCode.FATAL_CANNOT_GET_VALUE)
         }
@@ -58,7 +59,7 @@ case class FOR(assignment: NumericAssignment, endValue: NumericExpression, step:
       case Some(value)=>environment.initFor(assignment.variable,value,start,end,step)
     }
 
-  private def finishFor(program: Program,environment: Environment):Environment = environment.finishFor(program,assignment.variable)
+  private def finishFor(environment: Environment):Environment = environment.finishFor(assignment.variable)
   override def list: String = f"FOR ${assignment.variable.name.name} = " +
     f"${assignment.expression.list} TO ${endValue.list}" +
     step.map(s=>f" STEP ${s.list}").getOrElse("")
@@ -73,7 +74,7 @@ object FOR {
 // Empty list means that NEXT terminates the most recent FOR loop)
 // Multiple variables are treated as consecutive NEXT statements
 case class NEXT(variable: Option[Variable]=None) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment =
+  override def execute(environment: Environment): Environment =
     environment.getFor(variable) match {
       case Some(ForState(forVariable,_,_,_,_, ForStatus.FINISHED)) => environment.clearForStack(forVariable)
       case Some(ForState(_,_,_,_, forLine, _)) => environment.forceNextLine(forLine)
@@ -90,7 +91,7 @@ object NEXT {
 
 case class PRINT(tokens: Vector[PrintableToken]) extends Statement {
   // print text to console
-  override def execute(program: Program, environment: Environment): Environment =
+  override def execute(environment: Environment): Environment =
     environment.consolePrint(tokens.map(_.printableText(environment)).mkString("")+endOfLineOrNone)
   private def lastToken:Option[PrintableToken] = Try(tokens.last).toOption
   private def shouldSkipEol:Boolean=lastToken.exists(_.isEmptySeparator)
@@ -121,13 +122,13 @@ object PrintableToken {
 
 case class REM(comment: String) extends Statement {
   // ignore the line
-  override def execute(program: Program, environment: Environment): Environment = environment
+  override def execute(environment: Environment): Environment = environment
 
   override def list: String = f"REM $comment"
 }
 
 case class LET(assignment: AssignmentBase) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
+  override def execute(environment: Environment): Environment = {
     assignment.expression match {
       case num : NumericExpression =>
         num.valueNum(environment) match {
@@ -141,8 +142,8 @@ case class LET(assignment: AssignmentBase) extends Statement {
 }
 
 case class GOTO(toLine:LineNumber) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
-    program.lineByNum(StatementId(toLine)) match {
+  override def execute(environment: Environment): Environment = {
+    environment.program.lineByNum(StatementId(toLine)) match {
       case Right(line) => environment.forceNextLine(StatementId(line.number))
       case Left(code) => environment.setExitCode(code)
     }
@@ -151,10 +152,10 @@ case class GOTO(toLine:LineNumber) extends Statement {
 }
 
 case class IF(condition:NumericExpression,statement: Statement) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
+  override def execute(environment: Environment): Environment = {
     condition.valueNum(environment) match {
       case Some(v) if v==BigDecimal(0) => environment
-      case Some(_) => statement.execute(program,environment)
+      case Some(_) => statement.execute(environment)
       case None => environment.setExitCode(ExitCode.FATAL_IF_INVALID_CONDITION)
     }
   }
@@ -162,8 +163,8 @@ case class IF(condition:NumericExpression,statement: Statement) extends Statemen
 }
 
 case class GOSUB(toLine:LineNumber) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
-    program.lineByNum(StatementId(toLine)) match {
+  override def execute(environment: Environment): Environment = {
+    environment.program.lineByNum(StatementId(toLine)) match {
       case Right(_) => environment.pushLine(StatementId(toLine))
       case Left(code) => environment.setExitCode(code)
     }
@@ -172,22 +173,22 @@ case class GOSUB(toLine:LineNumber) extends Statement {
 }
 
 case class RETURN() extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = environment.popLine(program)
+  override def execute(environment: Environment): Environment = environment.popLine
   override def list: String = f"RETURN"
 }
 
 case class DIM(variable: Variable) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = environment.setArrayDim(variable)
+  override def execute(environment: Environment): Environment = environment.setArrayDim(variable)
   override def list: String = f"DIM ${variable.list}"
 }
 
 case class DATA(values:List[Any]) extends Statement {
-  override def preprocess(program: Program, environment: Environment): Environment = environment.storeData(values)
+  override def preprocess(environment: Environment): Environment = environment.storeData(values)
   override def list: String = f"DATA ${values.mkString(",")}"
 }
 
 case class READ(variables:List[Variable]) extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = {
+  override def execute(environment: Environment): Environment = {
     variables.foldLeft(environment)((env,variable)=>readOne(variable,env))
   }
   private def readOne(variable:Variable,environment: Environment):Environment =
@@ -199,6 +200,6 @@ case class READ(variables:List[Variable]) extends Statement {
 }
 
 case class STOP() extends Statement {
-  override def execute(program: Program, environment: Environment): Environment = environment.setExitCode(ExitCode.PROGRAM_END)
+  override def execute(environment: Environment): Environment = environment.setExitCode(ExitCode.PROGRAM_END)
   override def list: String = f"STOP"
 }

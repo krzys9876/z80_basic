@@ -21,8 +21,8 @@ object LineNumber {
 case class Line(number: LineNumber, statements: Vector[Statement]) extends Listable {
   override def list: String = f"$number ${statements.map(_.list).mkString(":")}"
 
-  def execute(program: Program, env: Environment, id:StatementId, runFunction:Statement.processLineType): Environment =
-    runFunction(statements(id.statementNum), program, env)
+  def execute(env: Environment, id:StatementId, runFunction:Statement.processLineType): Environment =
+    runFunction(statements(id.statementNum), env)
 
   def isNextFor(variable: Variable): Option[(Line,Int)] =
     statements.indexWhere(stmt=>stmt.isInstanceOf[NEXT] && stmt.asInstanceOf[NEXT].isNextFor(variable)) match {

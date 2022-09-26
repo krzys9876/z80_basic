@@ -92,8 +92,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(40, LET(Assignment("W",ExprVariable(Variable("AR",ExprIndex.static(List(4,2)))))))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("environment contains arrays with expected values")
       assert(environment.getValue(Variable("AR",ExprIndex.static(List(4,2)))).contains(99.88))
       assert(environment.getValue("V").contains(99.88))
@@ -117,8 +117,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(10, LET(Assignment(Variable("A$",ExprIndex.static(List(1))),StaticTextExpr("ABC")))),
         Line(20, PRINT(TextExprVariable(Variable("A$",ExprIndex.static(List(1))))))))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("console contains value of an test array")
       assert(environment.console.contains(List("ABC\n")))
     }
@@ -144,8 +144,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, NEXT("I"))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed properly and looping variable is set to end value")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
       assert(environment.getValue("I").contains(4))
@@ -191,8 +191,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("B")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed properly")
       And("looping variable is set to a value matching step but not greater than end value")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
@@ -251,8 +251,8 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
         Line(20, PRINT(StaticTextExpr("A")))
       ))
       When("program is executed")
-      val initialEnvironment = Environment.empty
-      val environment = initialEnvironment.run(program)
+      val initialEnvironment = Environment.load(program)
+      val environment = initialEnvironment.run
       Then("loop is executed only once")
       And("missing next is ignored")
       assert(environment.getCurrentStatement.contains(StatementId(20)))
@@ -428,7 +428,7 @@ class ProgramTest extends AnyFeatureSpec with GivenWhenThen {
       assert(environment.exitCode == ExitCode.PROGRAM_END)
       assert(environment.console.contains(List("A\n", "C\n")))
       And("the program will resume after popped line")
-      val envAfter = environment.popLine(program)
+      val envAfter = environment.popLine
       assert(envAfter.nextStatement.contains(StatementId(30)))
     }
     Scenario("run gosub and return") {

@@ -60,13 +60,13 @@ case class Environment(
       case Some(line)=>copy(lineStack=lineStack.push(line)).forceNextLine(nextLine)
     }
   }
-  def popLine(program: Program):Environment = {
+  def popLine:Environment = {
     lineStack.pop match {
       case Left(code)=>setExitCode(code)
-      case Right(newLineStack)=>copy(lineStack=newLineStack).setNextLineAfterReturn(program)
+      case Right(newLineStack)=>copy(lineStack=newLineStack).setNextLineAfterReturn()
     }
   }
-  private def setNextLineAfterReturn(program: Program):Environment =
+  private def setNextLineAfterReturn():Environment =
     getCurrentStatement match {
       case None => setExitCode(ExitCode.MISSING_RETURN_LINE)
       case Some(statement) =>
@@ -93,7 +93,7 @@ case class Environment(
 
   def continueFor(variable: Variable, nextValue:BigDecimal):Environment = setValue(variable, nextValue)
 
-  def finishFor(program: Program, variable: Variable):Environment =
+  def finishFor(variable: Variable):Environment =
     getCurrentStatement match {
       case None => setExitCode(ExitCode.FATAL_LINE_NOT_FOUND)
       case Some(lineNum) =>
@@ -106,26 +106,20 @@ case class Environment(
     }
 
   def getCurrentStatement:Option[StatementId]=lineStack.top
-  def initBefore(program:Program):Environment=
+  def reset:Environment=
     setExitCode(ExitCode.NORMAL)
       .setNextAction(program.firstStatement)
   def setExitCode(code:ExitCode):Environment = copy(exitCode=code)
 
-  def run(program:Program):Environment= {
-    runProgram(program,Statement.preprocess)
-      .runProgram(program,Statement.execute)
-  }
-
   def preprocess:Environment=
-    runProgram(program,Statement.preprocess)
-      .initBefore(program)
+    runProgram(Statement.preprocess)
+      .reset
 
-  def run:Environment= runProgram(program,Statement.execute)
+  def run:Environment= runProgram(Statement.execute)
 
-  private def runProgram(program: Program,
-                         runFunction:Statement.processLineType) = {
-    initBefore(program)
-      .nextLine(program,runFunction)
+  private def runProgram(runFunction:Statement.processLineType) = {
+    reset
+      .nextLine(runFunction)
   }
 
   def step:Environment=
@@ -133,28 +127,26 @@ case class Environment(
       case Left(code) => setExitCode(code) // end of program
       case Right(statementId) =>
         resetNextLine
-          .runOneLine(statementId, program, Statement.execute)
+          .runOneLine(statementId, Statement.execute)
     }
 
   @tailrec
-  private final def nextLine(program: Program,
-                            runFunction:Statement.processLineType):Environment= {
+  private final def nextLine(runFunction:Statement.processLineType):Environment= {
     nextAction match {
       case Left(code) => setExitCode(code) // end of program
       case Right(statementId) =>
         resetNextLine
-          .runOneLine(statementId,program,runFunction)
-          .nextLine(program,runFunction)
+          .runOneLine(statementId,runFunction)
+          .nextLine(runFunction)
     }
   }
 
   private def resetNextLine:Environment=copy(nextStatement=None)
-  private def runOneLine(statementId:StatementId, program: Program,
-                         runFunction:Statement.processLineType):Environment = {
+  private def runOneLine(statementId:StatementId, runFunction:Statement.processLineType):Environment = {
     program.lineByNum(statementId) match {
       case Left(code)=>setNextAction(Left(code))
       case Right(lineToExecute)=>
-        lineToExecute.execute(program,setLine(statementId),statementId,runFunction) match {
+        lineToExecute.execute(setLine(statementId),statementId,runFunction) match {
           case env if env.exitCode!=ExitCode.NORMAL => env.setNextAction(Left(env.exitCode))
           case env =>
             // determine next line - either next line in program (or end of program code) or other number saved by the executed line
